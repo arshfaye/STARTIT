@@ -54,7 +54,7 @@ type Sub = { endpoint: string; p256dh: string; auth: string };
 
 async function push(subs: Sub[], n: Nudge) {
   if (!pushReady) return "push not configured";
-  const payload = JSON.stringify({ title: n.subject, body: n.body.replace(/\s*\n+\s*/g, " ").slice(0, 240), url: `/#${n.tab}`, tag: n.kind });
+  const payload = JSON.stringify({ title: n.subject, body: n.body.replace(/\s*\n+\s*/g, " ").slice(0, 240), url: `/app#${n.tab}`, tag: n.kind });
   let sent = 0;
   for (const s of subs) {
     try {

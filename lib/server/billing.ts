@@ -36,8 +36,8 @@ export async function stripeCheckout(userId: string, email: string, origin: stri
     mode: "subscription",
     "line_items[0][price]": price,
     "line_items[0][quantity]": "1",
-    success_url: `${origin}/?billing=success#accountability`,
-    cancel_url: `${origin}/?billing=cancelled`,
+    success_url: `${origin}/app?billing=success#accountability`,
+    cancel_url: `${origin}/app?billing=cancelled`,
     client_reference_id: userId,
     customer_email: email,
     "subscription_data[metadata][user_id]": userId,
@@ -57,7 +57,7 @@ export async function stripeCancelNow(subscriptionId: string) {
 }
 
 export async function stripePortal(customer: string, origin: string) {
-  const s = await stripe<{ url: string }>("billing_portal/sessions", { customer, return_url: origin });
+  const s = await stripe<{ url: string }>("billing_portal/sessions", { customer, return_url: `${origin}/app` });
   return s.url;
 }
 

@@ -4,6 +4,7 @@ import { ArrowUp, Bot, Square, Trash2 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { today } from "@/lib/engine";
 import { askCofounder, buildTurns, CofounderError, errorCopy, STARTERS, type ChatMessage } from "@/lib/cofounder";
+import { demoReply, isDemoWorkspace, streamDemo } from "@/lib/demo";
 import { useStore } from "@/lib/store";
 import { cx } from "../ui";
 
@@ -37,6 +38,12 @@ export function Cofounder() {
         dispatch({ type: "CHAT_SET", chat: [...history, { role: "assistant", content: answer }] });
       } catch (e) {
         const err = e instanceof CofounderError ? e : new CofounderError("upstream_error", String(e));
+        // Public demo: no AI here, so the ClinicQ sample gets a pre-written answer built from its live numbers.
+        if (err.code === "not_configured" && isDemoWorkspace(state)) {
+          const answer = await streamDemo(demoReply(state, q), (t) => setStreaming(t), c.signal);
+          dispatch({ type: "CHAT_SET", chat: [...history, { role: "assistant", content: answer }] });
+          return;
+        }
         if (err.partial?.trim()) dispatch({ type: "CHAT_SET", chat: [...history, { role: "assistant", content: err.partial + (err.code === "cancelled" ? "\n\n_(stopped)_" : "") }] });
         if (err.code !== "cancelled") setError(errorCopy(err.code));
       } finally {

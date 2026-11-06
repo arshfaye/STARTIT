@@ -2,7 +2,7 @@
   "name": "STARTIT",
   "short_name": "STARTIT",
   "description": "The co-founder that tells you the truth.",
-  "start_url": "/",
+  "start_url": "/app",
   "display": "standalone",
   "background_color": "#181818",
   "theme_color": "#181818",

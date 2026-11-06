@@ -8,7 +8,8 @@
  * evidence-based kill score.
  */
 import { announceLimit, authHeaders } from "./cloud";
-import { askJson } from "./cofounder";
+import { askJson, CofounderError } from "./cofounder";
+import { demoAnalysis, isDemoIdea } from "./demo";
 import { today } from "./engine";
 import type { IdeaInput, ResearchAnalysis, Signal, SignalSource } from "./types";
 
@@ -123,7 +124,14 @@ Rules: 3-6 pains, most-mentioned first, 1-3 quotes each. If posts are off-topic,
 }
 
 export async function analyzeSignals(idea: IdeaInput, signals: Signal[], query: string, country: string, currency: string, abort?: AbortSignal): Promise<ResearchAnalysis> {
-  const raw = await askJson<Partial<ResearchAnalysis>>(buildPrompt(idea, signals, query, country, currency), abort, "research");
+  let raw: Partial<ResearchAnalysis>;
+  try {
+    raw = await askJson<Partial<ResearchAnalysis>>(buildPrompt(idea, signals, query, country, currency), abort, "research");
+  } catch (e) {
+    const demo = e instanceof CofounderError && e.code === "not_configured" && isDemoIdea(idea) ? demoAnalysis(signals, query) : null;
+    if (demo) return demo;
+    throw e;
+  }
   const ids = new Set(signals.map((s) => s.id));
   const str = (v: unknown, d = "") => (typeof v === "string" ? v : d);
   const arr = (v: unknown) => (Array.isArray(v) ? v : []);

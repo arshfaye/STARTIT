@@ -1,5 +1,6 @@
 /** Kill criteria, decision day, the weekly partner report and AI plan rebuilds. */
-import { askJson, buildDossier } from "./cofounder";
+import { askJson, buildDossier, CofounderError } from "./cofounder";
+import { demoPlan, demoUpdate, isDemoWorkspace } from "./demo";
 import { addDays, computeExecution, fmtDate, today } from "./engine";
 import { money } from "./locale";
 import { revenueTotals } from "./revenue";
@@ -76,7 +77,13 @@ ${buildDossier(state)}
 Propose 4-6 NEW tasks (don't repeat open tasks). Prioritise whatever is blocking revenue: selling, customer conversations and fixing the biggest pipeline leak come before building. Each task must be specific, finishable within its deadline, and measurable.
 
 Return ONLY JSON: {"tasks":[{"title":"verb-first, specific, measurable","phase":"Validation"|"MVP Build"|"Early-Adopter Launch"|"Growth","dueInDays":<1-14>,"tech":<true if it needs code>,"why":"one sentence tied to their numbers"}]}`;
-  const raw = await askJson<{ tasks?: Partial<PlanSuggestion>[] }>(prompt, signal, "plan");
+  let raw: { tasks?: Partial<PlanSuggestion>[] };
+  try {
+    raw = await askJson<{ tasks?: Partial<PlanSuggestion>[] }>(prompt, signal, "plan");
+  } catch (e) {
+    if (e instanceof CofounderError && e.code === "not_configured" && isDemoWorkspace(state)) return demoPlan(state);
+    throw e;
+  }
   const phases: Phase[] = ["Validation", "MVP Build", "Early-Adopter Launch", "Growth"];
   return (raw.tasks ?? [])
     .filter((t) => typeof t.title === "string" && t.title.trim())
@@ -106,6 +113,12 @@ Highlights / Key numbers (revenue, MRR, paying customers, pipeline) / What we sh
 Tone: confident, direct, no hype. Investors trust founders who report misses. Use the founder's currency.
 
 Return ONLY JSON: {"subject": "<Startup> update: <Month Year> — <one-line headline>", "body": "<the update>"}`;
-  const raw = await askJson<Partial<InvestorUpdate>>(prompt, signal, "update");
+  let raw: Partial<InvestorUpdate>;
+  try {
+    raw = await askJson<Partial<InvestorUpdate>>(prompt, signal, "update");
+  } catch (e) {
+    if (e instanceof CofounderError && e.code === "not_configured" && isDemoWorkspace(state)) return demoUpdate(state);
+    throw e;
+  }
   return { subject: String(raw.subject ?? `${state.idea.name} update`).slice(0, 200), body: String(raw.body ?? "").slice(0, 6000) };
 }

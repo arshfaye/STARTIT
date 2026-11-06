@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const BASE = process.env.BASE_URL || "http://localhost:3000";
+const BASE = (process.env.BASE_URL || "http://localhost:3000") + "/app";
 const OUT = fileURLToPath(new URL("../docs/screenshots/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
 

@@ -26,7 +26,7 @@ function supa() {
 
 export async function sendMagicLink(email: string) {
   const s = await supa();
-  const { error } = await s.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
+  const { error } = await s.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/app` } });
   if (error) throw new Error(error.message);
 }
 

@@ -143,8 +143,10 @@ const RUN: Record<Live, (q: string, country: string) => Promise<Signal[]>> = { h
 
 /** Probe: lets the app check that live search exists here and which sources have their keys. */
 export async function GET() {
+  // Searches need signed-in accounts in production (lib/server/guard.ts). Without them, say so, and the app offers Paste posts instead.
+  const ready = !!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NODE_ENV !== "production";
   return Response.json({
-    ok: true,
+    ok: ready,
     sources: { hn: true, appstore: true, stackexchange: true, bluesky: !!(process.env.BLUESKY_HANDLE && process.env.BLUESKY_APP_PASSWORD) },
   });
 }

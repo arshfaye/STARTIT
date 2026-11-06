@@ -56,5 +56,5 @@ export async function disablePush(): Promise<void> {
 /** A test notification straight from the browser, to confirm it works on this device. */
 export async function testPush() {
   const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-  await reg?.showNotification("STARTIT", { body: "Push is on. Your co-founder can reach you now.", icon: "/icon-192.png", badge: "/icon-192.png", data: { url: "/" } });
+  await reg?.showNotification("STARTIT", { body: "Push is on. Your co-founder can reach you now.", icon: "/icon-192.png", badge: "/icon-192.png", data: { url: "/app" } });
 }

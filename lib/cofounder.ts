@@ -256,7 +256,7 @@ export function errorCopy(code: string): string {
     case "refused":
       return "That one can't be answered. Rephrase what you're asking.";
     case "not_configured":
-      return "The AI co-founder isn't switched on in this version of STARTIT. Every other screen works; pick “Explore a sample” to see them.";
+      return "The AI isn't switched on in this demo, so it can only answer for the ClinicQ sample. Settings → Replace my workspace with sample data shows it in action.";
     case "limit_reached":
       return "You've hit today's limit on your plan. Upgrade for more, or come back tomorrow.";
     case "signed_out":

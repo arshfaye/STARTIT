@@ -117,6 +117,11 @@ Sales pipeline (lead → contacted → replied → demo → paid / lost) with a 
 3. **Push notifications (free):** standard Web Push, no third-party service. Run `npx web-push generate-vapid-keys` once and set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. Founders turn it on in Settings; each device is saved in `push_subscriptions`. Works on Android and desktop browsers, and on iPhone (iOS 16.4+) once STARTIT is added to the home screen (`public/manifest.webmanifest`, `public/sw.js`).
 4. **Daily reminder job:** `app/api/cron/nudges` runs daily (`vercel.json`, 04:00 UTC) and sends overdue tasks, tasks due tomorrow, the Sunday check-in, 5+ quiet days and decision day as push notifications (and optional email via `RESEND_API_KEY`). It reads only the content-free `reminders` facts (due dates and counts), so messages say *that* something needs attention, never *what*. Each reminder is sent at most once a day per channel. Protect the job with `CRON_SECRET`.
 
+## Pages and the public demo
+
+- `/` is the landing page (`components/landing/`), rendered on the server so link previews and search engines see it. `/app` is the app itself. Anything aimed at the old address (sign-in links, notifications, payment returns, `/#tab` bookmarks, the store apps) is forwarded to `/app` with its query and hash. In Supabase, add `https://yourdomain.com/app` to the allowed redirect URLs.
+- **Demo AI** (`lib/demo.ts`): when the AI isn't configured and the visitor is exploring the ClinicQ sample, the co-founder chat, research analysis (with 8 example posts written for the demo), plan rebuild and investor update return pre-written answers built from the sample's live numbers. Every answer says it's a demo. A founder's own startup never gets these; it gets the "AI isn't switched on" message.
+
 ## End-to-end encryption
 
 Code: `lib/vault.ts`, `lib/cloud.ts`, `components/Vault.tsx`.

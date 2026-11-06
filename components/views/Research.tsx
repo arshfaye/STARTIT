@@ -6,6 +6,7 @@ import { CofounderError, errorCopy } from "@/lib/cofounder";
 import { fmtDate } from "@/lib/engine";
 import { countryByCode } from "@/lib/locale";
 import { analyzeSignals, pastedToSignals, probeLiveSearch, searchSignals, SOURCE_LABEL, suggestedQuery, type LiveSources } from "@/lib/research";
+import { demoPosts, isDemoWorkspace } from "@/lib/demo";
 import { useStore } from "@/lib/store";
 import type { Signal, SignalSource } from "@/lib/types";
 import { Badge, Card, CardHeader, KillGauge, cx } from "../ui";
@@ -145,7 +146,7 @@ export function Research() {
                   </button>
                 ) : (
                   <div className="rounded-lg border border-line bg-abyss p-3 text-sm leading-relaxed text-muted">
-                    Live search runs in the full STARTIT app, which talks to Hacker News, the App Store, Stack Exchange and Bluesky from its server. In this preview, use <b className="text-ink">Paste posts</b>: copy threads, comments or reviews from anywhere and they get the same analysis.
+                    Live search runs in the full STARTIT app, which talks to Hacker News, the App Store, Stack Exchange and Bluesky from its server. Here, use <b className="text-ink">Paste posts</b>: copy threads, comments or reviews from anywhere and they get the same analysis.
                   </div>
                 )}
                 <p className="text-xs text-muted">Search the way a frustrated customer writes, not the way you pitch.</p>
@@ -171,6 +172,11 @@ export function Research() {
                 >
                   <ClipboardPaste className="h-4 w-4" /> Add {pasteCount || ""} post{pasteCount === 1 ? "" : "s"}
                 </button>
+                {isDemoWorkspace(state) && !state.signals.some((s) => s.id.startsWith("demo-")) && (
+                  <button className="btn-ghost w-full" onClick={() => dispatch({ type: "SIGNALS_ADD", signals: demoPosts() })}>
+                    <Sparkles className="h-4 w-4" /> Load 8 example posts for ClinicQ
+                  </button>
+                )}
               </div>
             )}
             {errors.length > 0 && (
