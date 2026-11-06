@@ -10,7 +10,7 @@ export const LEGAL = {
   contact: "github.com/arshfaye/STARTIT",
   contactUrl: "https://github.com/arshfaye/STARTIT/issues",
   grievanceOfficer: "Arsh Faye",
-  effective: "6 November 2026",
+  effective: "7 November 2026",
   site: "this website",
 };
 

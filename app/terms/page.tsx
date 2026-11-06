@@ -27,6 +27,9 @@ export default function Terms() {
         <h2>Your account and your content</h2>
         <ul>
           <li>Keep your sign-in email secure. You&apos;re responsible for activity on your account.</li>
+          <li>
+            Your workspace is end-to-end encrypted with a recovery key that only you hold. Keep it safe. We can&apos;t see it or reset it, so if you lose it we can&apos;t restore your workspace.
+          </li>
           <li>You own what you put into STARTIT. You give us permission to store and process it only to run the service for you.</li>
           <li>Only add other people&apos;s details (leads, interviewees, your partner) when you have the right to.</li>
           <li>You can delete your account at any time in Settings.</li>

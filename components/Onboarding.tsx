@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Check, MapPin, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { COUNTRIES, CURRENCIES, countryByCode, detectCountry, flag, longDate, money, prefsFor, samplePrice, type Prefs } from "@/lib/locale";
 import { cloudEnabled, cloudSignOut, deleteCloudAccount, sendMagicLink, verifyEmailCode } from "@/lib/cloud";
 import { disablePush, enablePush, pushSupport, testPush } from "@/lib/push";
@@ -10,7 +10,9 @@ import { useBilling } from "@/lib/usePlan";
 import { atLeast } from "@/lib/plans";
 import { loadWorkspace, useStore } from "@/lib/store";
 import type { IdeaInput } from "@/lib/types";
+import { LEGAL_VERSION } from "@/lib/legal";
 import { cx } from "./ui";
+import { EncryptionSettings } from "./Vault";
 
 type Step = "account" | "location" | "startup";
 const STEPS: Step[] = ["account", "location", "startup"];
@@ -30,6 +32,7 @@ export function Onboarding() {
   const [linkSent, setLinkSent] = useState(false);
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const submitCode = async () => {
     if (!/^\d{6}$/.test(code.trim())) return setErr("Enter the 6-digit code from the email.");
@@ -52,11 +55,17 @@ export function Onboarding() {
   const [mode, setMode] = useState<"own" | "sample">("own");
   const [idea, setIdea] = useState<IdeaInput>({ name: "", concept: "", audience: "" });
 
-  const profile = () => ({ name: name.trim(), email: email.trim().toLowerCase(), createdAt: new Date().toISOString() });
+  const profile = () => ({
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    createdAt: new Date().toISOString(),
+    consent: { version: LEGAL_VERSION, at: new Date().toISOString(), adult: true as const },
+  });
 
   const submitAccount = async () => {
     if (!name.trim()) return setErr("Enter your name.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setErr("Enter a valid email address.");
+    if (!agreed) return setErr("Tick the box to confirm you're 18 or older and agree to the Terms and Privacy policy.");
     setErr(null);
     // Cloud mode: prove the email with a magic link first. The workspace loads when they come back.
     if (cloud && !cloudEmail) {
@@ -166,6 +175,12 @@ export function Onboarding() {
                   <label htmlFor="ob-email" className="mb-1.5 block text-sm font-medium">Email</label>
                   <input id="ob-email" type="email" autoComplete="email" className="field py-2.5 disabled:opacity-70" disabled={!!cloudEmail} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
                 </div>
+                <label className="flex cursor-pointer items-start gap-2.5 pt-1 text-sm leading-snug text-muted">
+                  <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-current" />
+                  <span>
+                    I&apos;m 18 or older and I agree to the <LegalLink href="/terms">Terms of service</LegalLink> and <LegalLink href="/privacy">Privacy policy</LegalLink>.
+                  </span>
+                </label>
                 {err && <p className="text-sm text-flame">{err}</p>}
                 <button type="submit" className="btn-primary w-full py-2.5">Continue</button>
               </div>
@@ -440,6 +455,11 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 
       <Reminders />
 
+      <div className="space-y-3 border-t border-line pt-5">
+        <p className="text-sm font-medium">Privacy and encryption</p>
+        <EncryptionSettings />
+      </div>
+
       <div className="space-y-2 border-t border-line pt-5">
         {!confirmReset ? (
           <button className="btn-ghost w-full justify-start" onClick={() => setConfirmReset(true)}>
@@ -532,6 +552,17 @@ function DeleteAccount({ onClose }: { onClose: () => void }) {
 }
 
 /** Links to the privacy policy and terms. Hidden in the Claude preview, which has no such pages. */
+/** A link to a legal page where the server has one (not in the single-file preview). */
+function LegalLink({ href, children }: { href: string; children: ReactNode }) {
+  const { status } = useBilling();
+  if (!status) return <span className="text-ink">{children}</span>;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="text-ink underline underline-offset-2">
+      {children}
+    </a>
+  );
+}
+
 export function LegalLinks({ className }: { className?: string }) {
   const { status } = useBilling();
   if (!status) return null;

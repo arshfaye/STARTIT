@@ -19,7 +19,7 @@ Most AI tools for founders praise every idea and hand over a static business pla
 
 **Validate**
 - **Idea audit:** a 0–100 Kill Score, saturation rating, the five most likely ways the idea dies, and a pivot to a smaller, unserved niche.
-- **Market research:** pulls real posts and reviews from Hacker News, App Store reviews, Stack Exchange, Bluesky and Reddit. The AI clusters them into pain points with exact quotes and links, and produces an evidence-based Kill Score.
+- **Market research:** pulls real posts and reviews from Hacker News, App Store reviews, Stack Exchange and Bluesky. The AI clusters them into pain points with exact quotes and links, and produces an evidence-based Kill Score.
 
 **Execute**
 - **Adaptive plan:** a 4-week timetable (Validation → MVP → Launch → Growth) with custom tasks, which the AI rebuilds from what actually happened.
@@ -50,7 +50,7 @@ flowchart LR
   end
   SB[("Supabase<br/>Postgres · Auth · RLS")]
   AN["Anthropic API"]
-  SRC["HN · App Store · Stack Exchange<br/>Bluesky · Reddit"]
+  SRC["HN · App Store<br/>Stack Exchange · Bluesky"]
   PAY["Razorpay / Stripe"]
   PUSH["Web Push · email"]
   CRON["Vercel Cron"]

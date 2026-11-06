@@ -1,7 +1,8 @@
 /**
  * GET /api/cron/nudges — run once a day (see vercel.json).
- * Reads every workspace on a paid plan (Launch and Scale; Scale also gets the morning brief),
- * works out which reminders are due (lib/nudges.ts) and sends them as
+ * Workspaces are end-to-end encrypted, so this job never sees their contents. It reads only the
+ * content-free reminder facts each browser saves (due dates and counts, lib/nudges.ts) for founders on
+ * a paid plan (Launch and Scale; Scale also gets the morning brief), and sends generic reminders as
  * push notifications to the founder's devices (free, Web Push) and, optionally, by email (Resend).
  * Each reminder goes out at most once a day per channel.
  *
@@ -10,12 +11,11 @@
  *   NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:you@domain.com)
  *     Generate the key pair once with:  npx web-push generate-vapid-keys
- *   RESEND_API_KEY, REMINDER_FROM       optional email channel; also used for the partner's weekly report
+ *   RESEND_API_KEY, REMINDER_FROM       optional email channel
  */
 import webpush from "web-push";
-import { nudgesFor, type Nudge } from "@/lib/nudges";
+import { nudgesFromFacts, type Nudge, type ReminderFacts } from "@/lib/nudges";
 import { atLeast, effectivePlan, type PlanId } from "@/lib/plans";
-import type { AppState } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,12 +76,12 @@ export async function GET(req: Request) {
   if (!SB || !SERVICE) return Response.json({ error: "Supabase is not configured" }, { status: 501 });
 
   const [ws, ps, ss] = await Promise.all([
-    db("workspaces?select=user_id,email,data"),
+    db("workspaces?select=user_id,email,reminders"),
     db("push_subscriptions?select=user_id,endpoint,p256dh,auth"),
     db("subscriptions?select=user_id,plan,status,provider,period_end"),
   ]);
   if (!ws.ok) return Response.json({ error: `Could not read workspaces (${ws.status})` }, { status: 502 });
-  const rows = (await ws.json()) as { user_id: string; email: string; data: AppState }[];
+  const rows = (await ws.json()) as { user_id: string; email: string; reminders: ReminderFacts | null }[];
   const subsByUser = new Map<string, Sub[]>();
   if (ps.ok) for (const s of (await ps.json()) as (Sub & { user_id: string })[]) subsByUser.set(s.user_id, [...(subsByUser.get(s.user_id) ?? []), s]);
 
@@ -95,18 +95,15 @@ export async function GET(req: Request) {
   const count = (k: string) => (results[k] = (results[k] ?? 0) + 1);
 
   for (const row of rows) {
-    const s = row.data;
+    const facts = row.reminders;
+    if (!facts) continue;
     const plan = planOf.get(row.user_id) ?? "garage";
-    // Push, email reminders and partner reports are Launch features; Garage gets the in-app bell.
+    // Push and email reminders are Launch features; Garage gets the in-app bell.
     if (!atLeast(plan, "launch")) continue;
     const subs = subsByUser.get(row.user_id) ?? [];
-    for (const n of nudgesFor(s, day, plan)) {
-      if (n.to === "partner") {
-        if (await claim(row.user_id, n.kind, day, "email")) count(await email(s.notify.partnerEmail, n));
-        continue;
-      }
+    for (const n of nudgesFromFacts(facts, day, plan)) {
       if (subs.length && (await claim(row.user_id, n.kind, day, "push"))) count(await push(subs, n));
-      if (s.notify?.email !== false && (await claim(row.user_id, n.kind, day, "email"))) count(await email(row.email, n));
+      if (facts.email && (await claim(row.user_id, n.kind, day, "email"))) count(await email(row.email, n));
     }
   }
   return Response.json({ workspaces: rows.length, results });

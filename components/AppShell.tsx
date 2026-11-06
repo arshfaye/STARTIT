@@ -6,6 +6,7 @@ import { today } from "@/lib/engine";
 import { StoreProvider, useStore } from "@/lib/store";
 import type { TabId } from "@/lib/types";
 import { Logo, Onboarding, SettingsPanel } from "./Onboarding";
+import { RecoveryKeyDialog, UnlockScreen } from "./Vault";
 import { GradeBadge, Modal, cx } from "./ui";
 import { Accountability } from "./views/Accountability";
 import { Cofounder } from "./views/Cofounder";
@@ -25,7 +26,7 @@ type TabDef = { id: TabId; label: string; short: string; icon: typeof Crosshair;
 const TABS: TabDef[] = [
   { id: "cofounder", group: "", label: "Co-founder", short: "Ask", icon: Bot, title: "Your AI co-founder", sub: "Reads everything in STARTIT and tells you what to do. No sugarcoating." },
   { id: "audit", group: "Validate", label: "Idea Audit", short: "Audit", icon: Crosshair, title: "Idea Audit & Kill Score", sub: "Find out if anyone actually needs this before you build it." },
-  { id: "research", group: "Validate", label: "Market Research", short: "Research", icon: Search, title: "Market research", sub: "Real posts and reviews from Hacker News, the App Store, Stack Exchange, Bluesky and Reddit. Real pains, real quotes." },
+  { id: "research", group: "Validate", label: "Market Research", short: "Research", icon: Search, title: "Market research", sub: "Real posts and reviews from Hacker News, the App Store, Stack Exchange and Bluesky. Real pains, real quotes." },
   { id: "timetable", group: "Execute", label: "Timetable", short: "Plan", icon: CalendarRange, title: "Execution timetable", sub: "Your plan, rebuilt every week from what actually happened. Miss a deadline and it costs you." },
   { id: "customers", group: "Execute", label: "Customers", short: "Sales", icon: Users, title: "Customers", sub: "Every lead and every conversation. Selling is the job." },
   { id: "revenue", group: "Execute", label: "Revenue", short: "Money", icon: Wallet, title: "Revenue", sub: "What customers actually paid you. The only number that can't be faked." },
@@ -38,20 +39,27 @@ const MOBILE_TABS: TabId[] = ["cofounder", "timetable", "customers", "revenue"];
 const TAB_IDS = TABS.map((t) => t.id);
 
 function Gate() {
-  const { state } = useStore();
+  const { state, vault } = useStore();
   // Store app: lets CSS keep the header clear of the notch and status bar.
   useEffect(() => {
     if (isNativeApp()) document.documentElement.classList.add("native");
   }, []);
+  if (vault.locked) return <UnlockScreen />;
   if (!state.ready) return <div className="grid min-h-screen place-items-center text-sm text-muted">Loading…</div>;
   if (!state.profile)
     return (
       <>
         <Onboarding />
+        <RecoveryKeyDialog />
         <Toast />
       </>
     );
-  return <Shell />;
+  return (
+    <>
+      <Shell />
+      <RecoveryKeyDialog />
+    </>
+  );
 }
 
 function Shell() {

@@ -97,6 +97,8 @@ export interface Profile {
   name: string;
   email: string;
   createdAt: string;
+  /** What the user agreed to at sign-up: confirmed they're 18+ and accepted this version of the Terms and Privacy policy. */
+  consent?: { version: string; at: string; adult: true };
 }
 
 export interface AppState {
@@ -126,6 +128,7 @@ export interface AppState {
 
 /* ---------------------------------------------------------- research -- */
 
+/** "reddit" only appears on posts a founder pasted in themselves; STARTIT never searches Reddit. */
 export type SignalSource = "reddit" | "hn" | "appstore" | "stackexchange" | "bluesky" | "pasted";
 
 export interface Signal {

@@ -2,7 +2,7 @@
  * Market research: real posts and reviews in, evidence out.
  *
  * Signals come from live search in the Next.js app (/api/research: Hacker News, App Store reviews,
- * Stack Exchange, Bluesky, Reddit)
+ * Stack Exchange, Bluesky)
  * or from text the founder pastes (reviews, threads, comments from anywhere). The AI then
  * clusters them into pain themes with real quotes, willingness-to-pay signals and an
  * evidence-based kill score.
@@ -19,7 +19,7 @@ export const SOURCE_LABEL: Record<SignalSource, string> = { reddit: "Reddit", hn
  * no server behind it (like the Claude preview) gets no valid answer, so the app falls back to pasting.
  * Resolves to which sources are ready, or null when there is no server.
  */
-export type LiveSources = Partial<Record<Exclude<SignalSource, "pasted">, boolean>>;
+export type LiveSources = Partial<Record<Exclude<SignalSource, "pasted" | "reddit">, boolean>>;
 let probe: Promise<LiveSources | null> | null = null;
 export function probeLiveSearch(): Promise<LiveSources | null> {
   probe ??= serverProbe<{ ok?: boolean; sources?: LiveSources }>("/api/research").then((j) => (j?.ok ? (j.sources ?? {}) : null));

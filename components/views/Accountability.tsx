@@ -7,8 +7,6 @@ import { currencySymbol, money } from "@/lib/locale";
 import { revenueBetween } from "@/lib/revenue";
 import { weeklyReport } from "@/lib/decisions";
 import { KillCriteriaCard } from "../Decision";
-import { useBilling } from "@/lib/usePlan";
-import { atLeast } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import { Badge, Card, CardHeader, CopyButton, GradeBadge, Modal, ProgressBar, ScoreRing, cx } from "../ui";
 
@@ -315,7 +313,6 @@ function CheckInModal({ open, onClose, week }: { open: boolean; onClose: () => v
 function PartnerCard() {
   const { state, dispatch } = useStore();
   const n = state.notify;
-  const { plan } = useBilling();
   const [f, setF] = useState({ partnerName: n.partnerName, partnerEmail: n.partnerEmail, pledge: n.pledge });
   const [editing, setEditing] = useState(!n.partnerName);
   const report = weeklyReport(state);
@@ -355,21 +352,24 @@ function PartnerCard() {
     <Card>
       <CardHeader
         title={`Partner: ${n.partnerName}`}
-        eyebrow={
-          !n.partnerEmail
-            ? "Send them this report every Sunday"
-            : plan != null && !atLeast(plan, "launch")
-              ? "Automatic Sunday emails are part of Launch. Copy it for now."
-              : `Emailed to ${n.partnerEmail} every Sunday`
-        }
+        eyebrow={n.partnerEmail ? `Send it to ${n.partnerEmail} every Sunday, from your own email` : "Send them this report every Sunday"}
         action={
           <button className="text-xs text-muted hover:text-ink" onClick={() => setEditing(true)}>Edit</button>
         }
       />
       <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-abyss p-3 text-xs leading-relaxed text-ink/90">{report}</pre>
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap justify-end gap-2">
         <CopyButton text={report} label="Copy this week's report" />
+        {n.partnerEmail && (
+          <a
+            className="btn-primary"
+            href={`mailto:${encodeURIComponent(n.partnerEmail)}?subject=${encodeURIComponent(`My week on ${state.idea.name}`)}&body=${encodeURIComponent(report)}`}
+          >
+            Email it
+          </a>
+        )}
       </div>
+      <p className="mt-2 text-xs text-muted">Your workspace is end-to-end encrypted, so STARTIT can&apos;t send this for you. It opens in your own email app instead.</p>
     </Card>
   );
 }

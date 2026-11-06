@@ -93,8 +93,8 @@ Founders can add tasks to any phase and delete any task. Deadlines lock once set
 | App Store reviews | Reviews of the top 3 matching apps (your competitors) in the founder's country, worst first | None |
 | Stack Exchange | “What tool does X?” questions (Software Recommendations, Web Apps, Stack Overflow) | None; free key raises the limit |
 | Bluesky | Public posts | Free account + app password (search requires login) |
-| Reddit | Subreddit posts | Free app; commercial use needs Reddit's approval |
 
+- **Reddit is not searched.** Reddit's terms require a paid contract to use its data in a commercial product, and its public API is closing. Founders can still paste posts they find themselves.
 - **Paste posts** works everywhere, including the preview: threads, Play Store / G2 reviews, support emails. Blank lines separate posts.
 - The AI clusters posts into pain themes with counts and **exact quotes**, willingness-to-pay evidence, current alternatives, an opening, and an evidence-based kill score. Quotes that don't point to a real collected post are dropped.
 - Once research exists, the Idea Audit uses it. Without research, the audit is clearly labeled a pattern-based estimate.
@@ -108,14 +108,26 @@ Sales pipeline (lead → contacted → replied → demo → paid / lost) with a 
 - **Rebuild my plan:** the co-founder reads the full dossier and proposes 4–6 new, dated tasks. The founder picks which to commit to. A Growth phase continues past week 4.
 - **Kill criteria:** target + metric (paying customers, MRR, revenue, interviews) + deadline, locked until decision day.
 - **Decision day:** when the deadline passes, a banner forces a choice (double down / pivot / kill) with a written reason. Decisions feed the co-founder.
-- **Accountability partner:** name, email and a pledge. The weekly report can be copied now and is emailed every Sunday by the reminder job.
+- **Accountability partner:** name, email and a pledge. The weekly report is built on the device and sent from the founder's own email app (one tap), because the server can't read the encrypted workspace.
 
 ## Accounts, cloud storage and notifications (full app)
 
-1. **Supabase:** create a project, run `supabase/schema.sql`, enable Email auth, and set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Sign-in becomes a magic link, and workspaces sync to the `workspaces` table (row-level security: founders only see their own). Without these keys the app falls back to browser storage.
+1. **Supabase:** create a project, run `supabase/schema.sql`, enable Email auth, and set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Sign-in becomes a magic link, and workspaces sync to the `workspaces` table (row-level security: founders only see their own). Each workspace is end-to-end encrypted on the device first; see **End-to-end encryption** below. Without these keys the app falls back to browser storage.
 2. **In-app notifications:** the bell in the header shows today's reminders from `lib/nudges.ts`. Works everywhere, no setup.
 3. **Push notifications (free):** standard Web Push, no third-party service. Run `npx web-push generate-vapid-keys` once and set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. Founders turn it on in Settings; each device is saved in `push_subscriptions`. Works on Android and desktop browsers, and on iPhone (iOS 16.4+) once STARTIT is added to the home screen (`public/manifest.webmanifest`, `public/sw.js`).
-4. **Daily reminder job:** `app/api/cron/nudges` runs daily (`vercel.json`, 04:00 UTC) and sends overdue tasks, tasks due tomorrow, the Sunday check-in, 5+ quiet days and decision day as push notifications (and optional email via `RESEND_API_KEY`). The partner's weekly report goes by email. Each reminder is sent at most once a day per channel. Protect the job with `CRON_SECRET`.
+4. **Daily reminder job:** `app/api/cron/nudges` runs daily (`vercel.json`, 04:00 UTC) and sends overdue tasks, tasks due tomorrow, the Sunday check-in, 5+ quiet days and decision day as push notifications (and optional email via `RESEND_API_KEY`). It reads only the content-free `reminders` facts (due dates and counts), so messages say *that* something needs attention, never *what*. Each reminder is sent at most once a day per channel. Protect the job with `CRON_SECRET`.
+
+## End-to-end encryption
+
+Code: `lib/vault.ts`, `lib/cloud.ts`, `components/Vault.tsx`.
+
+- **What's encrypted:** the whole workspace (idea, tasks, check-ins, revenue, leads, interviews, research, decisions, chat). It's sealed in the browser with AES-256-GCM before it's saved, with the user's id bound in as authenticated data. The `workspaces.data` column only ever holds ciphertext.
+- **The key:** 32 random bytes made on the founder's device, kept in IndexedDB as a non-extractable `CryptoKey`. The same bytes are shown once as a 52-character recovery key. STARTIT never receives it, so neither STARTIT nor anyone with database access can read a workspace, and a lost key can't be recovered.
+- **New device or after signing out:** the app asks for the recovery key. "I lost my key" deletes the unreadable workspace and starts fresh.
+- **Settings → Get a new recovery key:** re-encrypts with a new key; the old one stops working. The new key is only stored on the device after the server holds the re-encrypted copy.
+- **Not encrypted, because the server needs them:** the account email (sign-in), plan and billing ids, daily usage counts, push subscriptions, and the content-free `reminders` facts.
+- **AI features:** when the founder uses the co-founder, research analysis, plan rebuilds or investor updates, the relevant part of the workspace is sent over HTTPS to the API route and on to Anthropic to produce that answer. The route doesn't store or log it.
+- **Local mode** (no Supabase): the workspace stays in this browser's storage and never leaves the device.
 
 ## Plans: Garage, Launch, Scale
 
@@ -128,7 +140,6 @@ Defined once in `lib/plans.ts` (names, prices, limits, feature lists) and enforc
 | Live searches / research analyses per day | 5 / 2 | 50 / 20 | 150 / 60 |
 | AI plan rebuilds / day | 1 | 8 | 25 |
 | Push notifications + email reminders | | ✓ | ✓ |
-| Accountability partner's weekly email | | ✓ | ✓ |
 | Morning brief (today's priorities, every morning) | | | ✓ |
 | AI investor update drafts | | | ✓ (10/day) |
 

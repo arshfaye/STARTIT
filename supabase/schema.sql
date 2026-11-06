@@ -1,13 +1,17 @@
 -- STARTIT schema. Run in the Supabase SQL editor once.
 
--- One workspace per founder. The whole app state is stored as JSON so the frontend
--- and database never drift; split into tables later if you need cross-user queries.
+-- One workspace per founder. `data` is end-to-end encrypted in the browser (AES-256-GCM,
+-- lib/vault.ts) before it's saved, so it holds ciphertext only: nobody with database access,
+-- including STARTIT, can read it. `reminders` holds content-free facts (due dates and counts)
+-- so the daily job can send generic reminders without decrypting anything.
 create table if not exists public.workspaces (
   user_id    uuid primary key references auth.users (id) on delete cascade,
   email      text not null,
   data       jsonb not null,
+  reminders  jsonb,
   updated_at timestamptz not null default now()
 );
+alter table public.workspaces add column if not exists reminders jsonb;
 
 alter table public.workspaces enable row level security;
 

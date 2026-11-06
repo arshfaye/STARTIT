@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode } from "react";
-import { cloudEnabled, cloudUserEmail, loadCloudWorkspace, saveCloudWorkspace } from "./cloud";
+import { cloudEnabled, cloudUserEmail, openCloudWorkspace, resetCloudWorkspace, saveCloudWorkspace, unlockCloudWorkspace } from "./cloud";
 import { addDays, analyzeIdea, daysBetween, buildTasks, computeExecution, gradeFromScore, scoreCheckIn, today, type ExecutionBreakdown } from "./engine";
 import { countryByCode, detectCountry, money, prefsFor, samplePrice, setActivePrefs, type Prefs } from "./locale";
 import { revenueBetween } from "./revenue";
@@ -371,6 +371,18 @@ interface Ctx {
   exec: ExecutionBreakdown;
   /** Email of the signed-in Supabase user (cloud mode only). */
   cloudEmail: string | null;
+  /** End-to-end encryption (cloud mode only). */
+  vault: {
+    /** The workspace is encrypted and this device needs the recovery key. */
+    locked: boolean;
+    /** A recovery key to show the founder once, then forget. */
+    recovery: string | null;
+    unlock: (code: string) => Promise<void>;
+    /** Lost key: delete the unreadable workspace and start fresh. */
+    reset: () => Promise<void>;
+    show: (code: string) => void;
+    dismiss: () => void;
+  };
 }
 
 const StoreContext = createContext<Ctx | null>(null);
@@ -381,6 +393,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   setActivePrefs(state.prefs);
 
   const [cloudEmail, setCloudEmail] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
+  const [recovery, setRecovery] = useState<string | null>(null);
 
   // Restore the founder's workspace: from Supabase when configured, otherwise this browser.
   useEffect(() => {
@@ -389,7 +403,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         try {
           const email = await cloudUserEmail();
           setCloudEmail(email);
-          dispatch({ type: "HYDRATE", state: email ? await loadCloudWorkspace() : null });
+          if (!email) {
+            dispatch({ type: "HYDRATE", state: null });
+            return;
+          }
+          const opened = await openCloudWorkspace();
+          if (opened.kind === "locked") {
+            setLocked(true);
+            return;
+          }
+          if (opened.recovery) setRecovery(opened.recovery);
+          dispatch({ type: "HYDRATE", state: opened.state });
           return;
         } catch (e) {
           console.warn("Cloud load failed, using this browser:", e);
@@ -407,7 +431,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const cloudTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!state.ready || !state.profile) return;
-    saveWorkspace(state);
+    // Signed in to the cloud: the encrypted copy on the server is the only copy. Otherwise, this browser.
+    if (!(cloudEnabled() && cloudEmail)) saveWorkspace(state);
     if (cloudEnabled() && cloudEmail) {
       if (cloudTimer.current) clearTimeout(cloudTimer.current);
       cloudTimer.current = setTimeout(() => void saveCloudWorkspace(state), 1200);
@@ -422,7 +447,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const exec = useMemo(() => computeExecution(state.tasks, state.checkIns, state.penalties), [state.tasks, state.checkIns, state.penalties]);
 
-  return <StoreContext.Provider value={{ state, dispatch, exec, cloudEmail }}>{children}</StoreContext.Provider>;
+  const vault = useMemo<Ctx["vault"]>(
+    () => ({
+      locked,
+      recovery,
+      unlock: async (code) => {
+        const ws = await unlockCloudWorkspace(code);
+        setLocked(false);
+        dispatch({ type: "HYDRATE", state: ws });
+      },
+      reset: async () => {
+        const code = await resetCloudWorkspace();
+        setLocked(false);
+        setRecovery(code);
+        dispatch({ type: "HYDRATE", state: null });
+      },
+      show: (code) => setRecovery(code),
+      dismiss: () => setRecovery(null),
+    }),
+    [locked, recovery],
+  );
+
+  return <StoreContext.Provider value={{ state, dispatch, exec, cloudEmail, vault }}>{children}</StoreContext.Provider>;
 }
 
 export function useStore() {

@@ -11,8 +11,6 @@
  *                  STACKEXCHANGE_KEY (free, stackapps.com) raises it. STACKEXCHANGE_SITES optional.
  *   bluesky        Post search needs a logged-in account: BLUESKY_HANDLE + BLUESKY_APP_PASSWORD
  *                  (free; create an app password in Bluesky settings).
- *   reddit         REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USER_AGENT. Free for low volume;
- *                  Reddit requires a contract for commercial use and permission for ML use.
  */
 import { guard } from "@/lib/server/guard";
 import type { Signal, SignalSource } from "@/lib/types";
@@ -139,53 +137,15 @@ async function bluesky(q: string): Promise<Signal[]> {
     }));
 }
 
-/* ----------------------------------------------------------------- Reddit -- */
-let redditToken: { value: string; expires: number } | null = null;
-async function reddit(q: string): Promise<Signal[]> {
-  const id = process.env.REDDIT_CLIENT_ID;
-  const secret = process.env.REDDIT_CLIENT_SECRET;
-  const ua = process.env.REDDIT_USER_AGENT || "web:startit:1.0";
-  if (!id || !secret) throw new Error("Add REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET to search Reddit.");
-  if (!redditToken || redditToken.expires < Date.now()) {
-    const r = await fetch("https://www.reddit.com/api/v1/access_token", {
-      method: "POST",
-      headers: { Authorization: `Basic ${Buffer.from(`${id}:${secret}`).toString("base64")}`, "Content-Type": "application/x-www-form-urlencoded", "User-Agent": ua },
-      body: "grant_type=client_credentials",
-    });
-    if (!r.ok) throw new Error(`Reddit auth failed (${r.status})`);
-    const j = (await r.json()) as { access_token: string; expires_in: number };
-    redditToken = { value: j.access_token, expires: Date.now() + (j.expires_in - 60) * 1000 };
-  }
-  const r = await fetch(`https://oauth.reddit.com/search?q=${encodeURIComponent(q)}&sort=relevance&t=year&limit=50&type=link&raw_json=1`, {
-    headers: { Authorization: `Bearer ${redditToken.value}`, "User-Agent": ua },
-  });
-  if (!r.ok) throw new Error(`Reddit search failed (${r.status})`);
-  const j = (await r.json()) as { data: { children: { data: { id: string; title: string; selftext: string; permalink: string; author: string; subreddit_name_prefixed: string; score: number; num_comments: number; created_utc: number; over_18: boolean } }[] } };
-  return j.data.children
-    .map((c) => c.data)
-    .filter((d) => !d.over_18)
-    .map((d) => ({
-      id: `rd-${d.id}`,
-      source: "reddit" as const,
-      title: d.title,
-      text: (d.selftext || d.title).slice(0, 2000),
-      url: `https://www.reddit.com${d.permalink}`,
-      author: d.author,
-      community: d.subreddit_name_prefixed,
-      score: d.score,
-      comments: d.num_comments,
-      date: day(d.created_utc),
-    }));
-}
-
-type Live = Exclude<SignalSource, "pasted">;
-const RUN: Record<Live, (q: string, country: string) => Promise<Signal[]>> = { hn, appstore, stackexchange, bluesky, reddit };
+/** Reddit is deliberately not searched: its terms require a paid contract for commercial use. */
+type Live = Exclude<SignalSource, "pasted" | "reddit">;
+const RUN: Record<Live, (q: string, country: string) => Promise<Signal[]>> = { hn, appstore, stackexchange, bluesky };
 
 /** Probe: lets the app check that live search exists here and which sources have their keys. */
 export async function GET() {
   return Response.json({
     ok: true,
-    sources: { hn: true, appstore: true, stackexchange: true, bluesky: !!(process.env.BLUESKY_HANDLE && process.env.BLUESKY_APP_PASSWORD), reddit: !!(process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET) },
+    sources: { hn: true, appstore: true, stackexchange: true, bluesky: !!(process.env.BLUESKY_HANDLE && process.env.BLUESKY_APP_PASSWORD) },
   });
 }
 

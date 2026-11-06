@@ -43,7 +43,6 @@ export const TIERS: Tier[] = [
       "50 live searches and 20 research analyses a day",
       "8 AI plan rebuilds a day",
       "Push notifications and email reminders",
-      "Weekly report emailed to your accountability partner",
     ],
   },
   {

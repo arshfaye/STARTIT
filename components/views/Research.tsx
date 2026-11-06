@@ -7,15 +7,14 @@ import { fmtDate } from "@/lib/engine";
 import { countryByCode } from "@/lib/locale";
 import { analyzeSignals, pastedToSignals, probeLiveSearch, searchSignals, SOURCE_LABEL, suggestedQuery, type LiveSources } from "@/lib/research";
 import { useStore } from "@/lib/store";
-import type { SignalSource } from "@/lib/types";
+import type { Signal, SignalSource } from "@/lib/types";
 import { Badge, Card, CardHeader, KillGauge, cx } from "../ui";
 
-const LIVE: { id: Exclude<SignalSource, "pasted">; hint: string }[] = [
+const LIVE: { id: Exclude<SignalSource, "pasted" | "reddit">; hint: string }[] = [
   { id: "hn", hint: "Founders and builders. No setup." },
   { id: "appstore", hint: "Your competitors' reviews in your country. No setup." },
   { id: "stackexchange", hint: "“What tool does X?” questions. No setup." },
   { id: "bluesky", hint: "Needs a free Bluesky login on the server." },
-  { id: "reddit", hint: "Needs a Reddit app key on the server." },
 ];
 
 export function Research() {
@@ -146,7 +145,7 @@ export function Research() {
                   </button>
                 ) : (
                   <div className="rounded-lg border border-line bg-abyss p-3 text-sm leading-relaxed text-muted">
-                    Live search runs in the full STARTIT app, which talks to Hacker News, the App Store, Stack Exchange, Bluesky and Reddit from its server. In this preview, use <b className="text-ink">Paste posts</b>: copy threads, comments or reviews from anywhere and they get the same analysis.
+                    Live search runs in the full STARTIT app, which talks to Hacker News, the App Store, Stack Exchange and Bluesky from its server. In this preview, use <b className="text-ink">Paste posts</b>: copy threads, comments or reviews from anywhere and they get the same analysis.
                   </div>
                 )}
                 <p className="text-xs text-muted">Search the way a frustrated customer writes, not the way you pitch.</p>
@@ -305,24 +304,19 @@ export function Research() {
                         const s = byId.get(q.signalId);
                         return (
                           <blockquote key={q.signalId + q.text.slice(0, 10)} className="mt-2.5 border-l-2 border-line pl-3 text-sm text-muted">
-                            “{q.text}”
-                            {s && (
-                              <span className="mt-0.5 block text-xs">
-                                {s.url ? (
-                                  <a href={s.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-ink hover:underline">
-                                    {s.community ?? SOURCE_LABEL[s.source]}
-                                  </a>
-                                ) : (
-                                  s.community ?? SOURCE_LABEL[s.source]
-                                )}
-                              </span>
-                            )}
+                            “{excerpt(q.text)}”
+                            {s && <Credit s={s} />}
                           </blockquote>
                         );
                       })}
                     </li>
                   ))}
                 </ol>
+                <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
+                  Quotes are short excerpts from public posts, credited to their authors and linked to the original. Stack Exchange content is licensed under{" "}
+                  <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline underline-offset-2">CC BY-SA 4.0</a>. STARTIT doesn&apos;t
+                  claim ownership of anything quoted here.
+                </p>
               </Card>
 
               <div className="grid gap-5 md:grid-cols-2">
@@ -359,5 +353,29 @@ export function Research() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Keep quotes to a short excerpt: enough to show the pain, never a copy of someone's whole post. */
+function excerpt(text: string, max = 280) {
+  const t = text.trim();
+  return t.length <= max ? t : t.slice(0, t.lastIndexOf(" ", max - 1) > 0 ? t.lastIndexOf(" ", max - 1) : max) + "…";
+}
+
+/** "— author · where · date", linked to the original post. */
+function Credit({ s }: { s: Signal }) {
+  const where = s.community ?? SOURCE_LABEL[s.source];
+  const label = [s.author && s.source !== "appstore" ? s.author : null, where, s.date ? fmtDate(s.date) : null].filter(Boolean).join(" · ");
+  return (
+    <span className="mt-0.5 block text-xs">
+      —{" "}
+      {s.url ? (
+        <a href={s.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-ink hover:underline">
+          {label}
+        </a>
+      ) : (
+        label
+      )}
+    </span>
   );
 }
