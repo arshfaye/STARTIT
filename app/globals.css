@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Neutral palette. Values are "R G B" so Tailwind opacity modifiers work. */
+:root {
+  --bg: 255 255 255;
+  --bg-subtle: 247 247 248;
+  --surface: 255 255 255;
+  --border: 229 229 232;
+  --fg: 23 23 23;
+  --fg-2: 64 64 70;
+  --fg-muted: 113 113 122;
+  --ok: 22 128 61;
+  --warn: 180 83 9;
+  --bad: 220 38 38;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: 24 24 24;
+    --bg-subtle: 33 33 33;
+    --surface: 30 30 30;
+    --border: 50 50 52;
+    --fg: 236 236 236;
+    --fg-2: 200 200 205;
+    --fg-muted: 150 150 156;
+    --ok: 74 200 120;
+    --warn: 240 180 60;
+    --bad: 240 110 110;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: 24 24 24;
+  --bg-subtle: 33 33 33;
+  --surface: 30 30 30;
+  --border: 50 50 52;
+  --fg: 236 236 236;
+  --fg-2: 200 200 205;
+  --fg-muted: 150 150 156;
+  --ok: 74 200 120;
+  --warn: 240 180 60;
+  --bad: 240 110 110;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .glass {
+    @apply rounded-xl border border-line bg-surface;
+  }
+  .glass-strong {
+    @apply rounded-xl border border-line bg-surface;
+  }
+  .eyebrow {
+    @apply text-xs font-medium text-muted;
+  }
+  .field {
+    @apply w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/70
+      outline-none transition focus:border-ink/40 focus:ring-2 focus:ring-ink/10;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-ink text-obsidian hover:bg-ink/85;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink hover:bg-abyss;
+  }
+  .btn-danger {
+    @apply btn border border-flame/30 bg-surface text-flame hover:bg-flame/5;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Phone app and home-screen installs run edge to edge: keep the header below the notch / status bar. */
+html.native .app-header {
+  padding-top: env(safe-area-inset-top);
+}
+@media (display-mode: standalone) {
+  .app-header {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

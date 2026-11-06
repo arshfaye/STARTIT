@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>STARTIT</title>
+<style>
+  :root { color-scheme: light dark; --bg: #fff; --fg: #171717; --muted: #71717a; --line: #e5e5e8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #181818; --fg: #ececec; --muted: #96969c; --line: #323234; } }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { min-height: 100%; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); box-sizing: border-box; text-align: center; }
+  .mark { width: 40px; height: 40px; border-radius: 10px; background: var(--fg); color: var(--bg); display: grid; place-items: center; margin: 0 auto 20px; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p { margin: 0 auto; max-width: 300px; color: var(--muted); }
+  button { margin-top: 24px; font: inherit; font-weight: 600; padding: 10px 22px; border-radius: 10px; border: 0; background: var(--fg); color: var(--bg); }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l5-5 4 4 5-6"/></svg>
+    </div>
+    <h1>You're offline</h1>
+    <p>STARTIT needs a connection to load your workspace. Check your internet, then try again.</p>
+    <button onclick="location.href = '__SERVER_URL__'">Try again</button>
+  </div>
+</main>
+</body>
+</html>
