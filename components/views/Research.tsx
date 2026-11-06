@@ -37,7 +37,7 @@ export function Research() {
     };
   }, []);
   const [query, setQuery] = useState(() => state.research?.query || suggestedQuery(state.idea));
-  const [sources, setSources] = useState<Exclude<SignalSource, "pasted">[]>(["hn", "appstore", "stackexchange"]);
+  const [sources, setSources] = useState<Exclude<SignalSource, "pasted" | "reddit">[]>(["hn", "appstore", "stackexchange"]);
   const [paste, setPaste] = useState("");
   const [busy, setBusy] = useState<"search" | "analyze" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
