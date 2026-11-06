@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { LEGAL, LegalPage } from "@/components/legal/LegalPage";
+import { Contact, LEGAL, LegalPage } from "@/components/legal/LegalPage";
 import { TIERS } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Terms of service · STARTIT" };
 
-// DRAFT. Replace the bracketed values in components/legal/LegalPage.tsx and have a lawyer review
-// before launch, especially the liability and governing-law sections.
+// Have a lawyer review before launching commercially, especially the liability and governing-law sections.
 export default function Terms() {
   const paid = TIERS.filter((t) => t.price.INR > 0);
   return (
@@ -72,7 +71,7 @@ export default function Terms() {
       <section>
         <h2>Law and contact</h2>
         <p>
-          These terms are governed by the laws of [your country / state], and disputes go to the courts of [city], unless the law where you live gives you other rights. Questions: {LEGAL.email}.
+          These terms are governed by the laws of India, and disputes go to the courts of India, unless the law where you live gives you other rights. Questions: <Contact />.
         </p>
       </section>
     </LegalPage>

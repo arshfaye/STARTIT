@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { LEGAL, LegalPage } from "@/components/legal/LegalPage";
+import { Contact, LEGAL, LegalPage } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = { title: "Privacy policy · STARTIT" };
 
-// DRAFT. Matches what the app actually does as of this version. Replace the bracketed values in
-// components/legal/LegalPage.tsx and have it reviewed by a lawyer before launch.
+// Matches what the app actually does as of this version. Have it reviewed by a lawyer before launching commercially.
 export default function Privacy() {
   return (
     <LegalPage title="Privacy policy">
       <section>
         <p>
-          STARTIT is run by {LEGAL.company}, {LEGAL.address} (&quot;we&quot;). This policy explains what we collect when you use STARTIT on the web or in our apps, why, who we share it
+          STARTIT is run by {LEGAL.company} (&quot;we&quot;). This policy explains what we collect when you use STARTIT on the web or in our apps, why, who we share it
           with, and the choices you have.
         </p>
       </section>
@@ -76,10 +75,10 @@ export default function Privacy() {
           <li><b>See and correct</b> your data: everything you&apos;ve entered is visible and editable in the app.</li>
           <li><b>Delete your account:</b> Settings → Delete account, in the app or at {LEGAL.site}. This cancels any paid plan immediately.</li>
           <li><b>Turn off</b> push and email reminders in Settings at any time.</li>
-          <li><b>Ask us</b> anything about your data at {LEGAL.email}.</li>
+          <li><b>Ask us</b> anything about your data at <Contact />.</li>
         </ul>
         <p>
-          If you&apos;re in India, you can raise a complaint with our Grievance Officer, {LEGAL.grievanceOfficer}, at {LEGAL.email}. You may also have rights under the laws of your own country,
+          If you&apos;re in India, you can raise a complaint with our Grievance Officer, {LEGAL.grievanceOfficer}, at <Contact />. You may also have rights under the laws of your own country,
           such as the GDPR in Europe.
         </p>
       </section>
