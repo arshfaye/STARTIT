@@ -35,10 +35,12 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
+    "android",
     "ios",
     "native",
     "node_modules",
     "preview",
-    "android"
+    "scripts",
+    "tests"
   ]
 }

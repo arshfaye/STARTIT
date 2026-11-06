@@ -196,7 +196,7 @@ export async function askCofounder(turns: ChatMessage[], { onText, signal }: Ask
   }
   if (!res.ok || !res.body) {
     const msg = await res.text().catch(() => "");
-    throw new CofounderError(res.status === 501 ? "not_configured" : res.status === 404 || res.status === 405 ? "unavailable" : "upstream_error", msg || `HTTP ${res.status}`);
+    throw new CofounderError(res.status === 501 || res.status === 503 ? "not_configured" : res.status === 404 || res.status === 405 ? "unavailable" : "upstream_error", msg || `HTTP ${res.status}`);
   }
   const reader = res.body.getReader();
   const dec = new TextDecoder();
@@ -256,7 +256,7 @@ export function errorCopy(code: string): string {
     case "refused":
       return "That one can't be answered. Rephrase what you're asking.";
     case "not_configured":
-      return "Add ANTHROPIC_API_KEY to .env.local to turn the co-founder on.";
+      return "The AI co-founder isn't switched on in this version of STARTIT. Every other screen works; pick “Explore a sample” to see them.";
     case "limit_reached":
       return "You've hit today's limit on your plan. Upgrade for more, or come back tomorrow.";
     case "signed_out":
