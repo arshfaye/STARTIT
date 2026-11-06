@@ -6,7 +6,6 @@
 
 Most AI tools for founders praise every idea and hand over a static business plan. STARTIT does the opposite. It's blunt, it works from the founder's real numbers, and it makes them do the uncomfortable parts: talking to customers, selling, and deciding when to quit.
 
-<!-- Screenshots: run `npm run screenshots`, then uncomment this block.
 <p>
   <img src="docs/screenshots/audit.png" alt="Idea audit with kill score" width="49%">
   <img src="docs/screenshots/accountability.png" alt="Weekly grading and kill criteria" width="49%">
@@ -15,7 +14,6 @@ Most AI tools for founders praise every idea and hand over a static business pla
   <img src="docs/screenshots/customers.png" alt="Sales pipeline" width="49%">
   <img src="docs/screenshots/plans.png" alt="Garage, Launch and Scale plans" width="49%">
 </p>
--->
 
 ## Features
 
@@ -113,4 +111,4 @@ In active development and not yet launched. Next up: native push notifications a
 
 ---
 
-Built by **Arsh Faye** · [@arshfaye](https://github.com/arshfaye)
+Built by **Arsh Faye** · [GitHub](https://github.com/arshfaye) · [LinkedIn](https://www.linkedin.com/in/arsh-faye-6766b9357)
