@@ -2,6 +2,8 @@
 
 **An AI co-founder that tells founders the truth.** STARTIT takes a startup from a raw idea to paying customers: it stress-tests the idea against real customer complaints, builds a week-by-week execution plan, grades the founder every Sunday, and penalises missed deadlines.
 
+**[Live demo →](https://startit-arshfaye.vercel.app)** Sign in with any name and email, then pick **Explore a sample** to see every screen with data. In the demo, data stays in your browser and the AI is switched off.
+
 Most AI tools for founders praise every idea and hand over a static business plan. STARTIT does the opposite. It's blunt, it works from the founder's real numbers, and it makes them do the uncomfortable parts: talking to customers, selling, and deciding when to quit.
 
 <!-- Screenshots: run `npm run screenshots`, then uncomment this block.

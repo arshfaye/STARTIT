@@ -5,8 +5,18 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "STARTIT — the anti-bullshit OS for founders",
-  description: "Brutal idea audits, a 4-week execution plan, weekly grading and real penalties for missed deadlines.",
+  metadataBase: new URL("https://startit-arshfaye.vercel.app"),
+  title: "STARTIT — your AI co-founder",
+  description: "Stress-test your startup idea against real customer complaints, follow a week-by-week plan, and get graded every Sunday.",
+  openGraph: {
+    title: "STARTIT — your AI co-founder",
+    description: "Stress-test your startup idea against real customer complaints, follow a week-by-week plan, and get graded every Sunday.",
+    url: "/",
+    siteName: "STARTIT",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "STARTIT" }],
+    type: "website",
+  },
+  twitter: { card: "summary", title: "STARTIT — your AI co-founder", images: ["/icon-512.png"] },
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
   appleWebApp: { capable: true, title: "STARTIT", statusBarStyle: "black-translucent" },
