@@ -144,8 +144,8 @@ export function IdeaAudit() {
                     </Badge>
                     <Badge>Category · {a.category}</Badge>
                   </div>
-                  <h2 className="text-xl font-semibold leading-snug tracking-tight [text-wrap:balance] sm:text-2xl">{ev ? ev.summary : a.verdict}</h2>
-                  <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <h2 className="text-lg font-semibold leading-snug tracking-tight [text-wrap:balance] sm:text-xl">{ev ? ev.summary : a.verdict}</h2>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
                     {a.signals.slice(0, 4).map((s) => (
                       <div key={s.label} className="min-w-0 rounded-lg border border-line bg-abyss px-3 py-2">
                         <p className="truncate text-[10px] text-muted">{s.label}</p>
@@ -186,7 +186,7 @@ export function IdeaAudit() {
             ) : (
               <div className="animate-rise flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-abyss px-4 py-3">
                 <p className="text-sm text-muted">
-                  <span className="font-medium text-ink">This is a quick estimate</span> based on what usually goes wrong in {a.category} startups. Get real evidence from Reddit, Hacker News and X.
+                  <span className="font-medium text-ink">This is a quick estimate</span> based on what usually goes wrong in {a.category} startups. Get real evidence from Reddit, Hacker News, app reviews and more.
                 </p>
                 <button className="btn-primary text-sm" onClick={() => dispatch({ type: "SET_TAB", tab: "research" })}>
                   Run market research
