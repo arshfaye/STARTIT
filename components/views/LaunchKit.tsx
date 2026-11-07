@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, Hash, MessagesSquare, Megaphone, RefreshCw, Users } from "lucide-react";
+import { safeUrl } from "@/lib/safeUrl";
 import { useState } from "react";
 import { communitiesFor, launchCopy, type CopyChannel } from "@/lib/engine";
 import { useStore } from "@/lib/store";
@@ -36,7 +37,7 @@ export function LaunchKit() {
           {communities.map((c) => (
             <li key={c.name}>
               <a
-                href={c.url}
+                href={safeUrl(c.url)}
                 target="_blank"
                 rel="noreferrer"
                 className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-line bg-surface p-3.5 transition hover:bg-abyss"

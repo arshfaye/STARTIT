@@ -7,6 +7,7 @@ import { fmtDate } from "@/lib/engine";
 import { countryByCode } from "@/lib/locale";
 import { analyzeSignals, pastedToSignals, probeLiveSearch, searchSignals, SOURCE_LABEL, suggestedQuery, type LiveSources } from "@/lib/research";
 import { demoPosts, isDemoWorkspace } from "@/lib/demo";
+import { safeUrl } from "@/lib/safeUrl";
 import { useStore } from "@/lib/store";
 import type { Signal, SignalSource } from "@/lib/types";
 import { Badge, Card, CardHeader, KillGauge, cx } from "../ui";
@@ -229,8 +230,8 @@ export function Research() {
                             {s.date && ` · ${fmtDate(s.date)}`}
                           </p>
                         </div>
-                        {s.url && (
-                          <a href={s.url} target="_blank" rel="noreferrer" aria-label="Open original" className="shrink-0 p-1 text-muted hover:text-ink">
+                        {safeUrl(s.url) && (
+                          <a href={safeUrl(s.url)} target="_blank" rel="noreferrer" aria-label="Open original" className="shrink-0 p-1 text-muted hover:text-ink">
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         )}
@@ -375,8 +376,8 @@ function Credit({ s }: { s: Signal }) {
   return (
     <span className="mt-0.5 block text-xs">
       —{" "}
-      {s.url ? (
-        <a href={s.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-ink hover:underline">
+      {safeUrl(s.url) ? (
+        <a href={safeUrl(s.url)} target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-ink hover:underline">
           {label}
         </a>
       ) : (

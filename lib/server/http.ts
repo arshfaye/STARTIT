@@ -20,7 +20,8 @@ export async function readBody<T extends Record<string, unknown>>(req: Request, 
 /** STARTIT has no passwords. Refuse any request that tries to set or use one. */
 export const hasPassword = (body: Record<string, unknown>) => Object.keys(body).some((k) => /pass(word)?|pwd/i.test(k));
 
-export const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
+/** Ordinary email addresses only: no brackets, quotes or commas that could reach a query. */
+export const EMAIL_RE = /^[A-Za-z0-9._%+'-]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,24}$/;
 
 /** Common checks for every auth route. Returns a Response to send back if the request must stop. */
 export function preflight(req: Request, body: Record<string, unknown> | null): Response | null {

@@ -17,7 +17,8 @@ const SB = process.env.NEXT_PUBLIC_SUPABASE_URL;
 // Server-only: the browser never talks to Supabase, so the key isn't shipped to it.
 const ANON = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DEV = process.env.NODE_ENV !== "production";
+// Local development only: never on Vercel, whatever NODE_ENV says.
+const DEV = process.env.NODE_ENV !== "production" && !process.env.VERCEL;
 export const cloudReady = () => !!(SB && ANON && SERVICE);
 
 export interface Caller {

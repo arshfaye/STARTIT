@@ -68,14 +68,14 @@ export function sameOrigin(req: Request): boolean {
   }
 }
 
-export function setSession(t: Tokens) {
-  const jar = cookies();
+export async function setSession(t: Tokens) {
+  const jar = await cookies();
   jar.set(ACCESS_COOKIE, t.access_token, cookieOptions(Math.max(60, t.expires_in ?? 3600)));
   jar.set(REFRESH_COOKIE, t.refresh_token, cookieOptions(REFRESH_MAX_AGE));
 }
 
-export function clearSession() {
-  const jar = cookies();
+export async function clearSession() {
+  const jar = await cookies();
   jar.set(ACCESS_COOKIE, "", cookieOptions(0));
   jar.set(REFRESH_COOKIE, "", cookieOptions(0));
 }
@@ -94,17 +94,17 @@ export async function gotrue<T>(path: string, init: RequestInit & { token?: stri
 /** The access token from the cookies, refreshed (and the cookies rotated) when it's within a minute of expiring. */
 async function accessToken(): Promise<string | null> {
   if (!SB || !ANON) return null;
-  const jar = cookies();
+  const jar = await cookies();
   const at = jar.get(ACCESS_COOKIE)?.value;
   if (at && (jwtClaims(at).exp ?? 0) * 1000 > Date.now() + 60_000) return at;
   const rt = jar.get(REFRESH_COOKIE)?.value;
   if (!rt) return null;
   const r = await gotrue<Tokens>("token?grant_type=refresh_token", { method: "POST", body: JSON.stringify({ refresh_token: rt }) });
   if (!r.ok || !r.body.access_token) {
-    clearSession();
+    await clearSession();
     return null;
   }
-  setSession(r.body);
+  await setSession(r.body);
   return r.body.access_token;
 }
 

@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-// No ESLint setup in this project; type-checking still runs on every build.
 
 // Content Security Policy: scripts, styles, fonts and requests stay on this site. The only outside
 // host is Cloudflare Turnstile (the CAPTCHA after repeated failed sign-ins). The browser never talks
@@ -34,7 +33,6 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  eslint: { ignoreDuringBuilds: true },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

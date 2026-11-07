@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     await fail(req, "otp_verify", null, g.attempts, `link ${r.status}`);
     return back("?auth=failed");
   }
-  setSession(r.body);
+  await setSession(r.body);
   await logAttempt("otp_verify", clientIp(req), null, true, "link");
   return back("");
 }

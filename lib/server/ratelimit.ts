@@ -66,11 +66,14 @@ export function ipHash(ip: string): string {
 
 const normEmail = (e: string) => e.trim().toLowerCase();
 
+/** A value for a PostgREST filter, double-quoted and escaped so no character in it can change the query. */
+export const pgValue = (v: string) => encodeURIComponent(`"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+
 /** Recent attempts at this action from this IP or for this account. Throws if the log can't be read (fail closed). */
 export async function recentAttempts(action: AuthAction, ip: string, account: string | null, now = Date.now()): Promise<Attempt[]> {
   const since = new Date(now - LOCK_MAX_MS).toISOString();
   const h = ipHash(ip);
-  const who = account ? `or=(ip_hash.eq.${h},account.eq.${encodeURIComponent(normEmail(account))})` : `ip_hash=eq.${h}`;
+  const who = account ? `or=(ip_hash.eq.${h},account.eq.${pgValue(normEmail(account))})` : `ip_hash=eq.${h}`;
   // Refusals (rate limited, locked, CAPTCHA missing) are logged but never counted: otherwise an
   // attacker could keep someone else's account locked just by hammering it.
   const r = await db(`auth_events?select=at,ok,ip_hash,account,detail&action=eq.${action}&at=gte.${since}&${who}&order=at.desc&limit=200`);
@@ -89,7 +92,7 @@ export async function logAttempt(action: AuthAction, ip: string, account: string
 
 /** When the last code was sent to this address (for our own 10-minute expiry on email codes). */
 export async function lastCodeSent(account: string): Promise<number | null> {
-  const r = await db(`auth_events?select=at&action=eq.otp_send&ok=eq.true&account=eq.${encodeURIComponent(normEmail(account))}&order=at.desc&limit=1`);
+  const r = await db(`auth_events?select=at&action=eq.otp_send&ok=eq.true&account=eq.${pgValue(normEmail(account))}&order=at.desc&limit=1`);
   if (!r.ok) throw new Error(`auth_events read failed (${r.status})`);
   const row = ((await r.json()) as { at: string }[])[0];
   return row ? Date.parse(row.at) : null;

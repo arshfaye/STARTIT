@@ -54,7 +54,7 @@ beforeEach(() => {
       const action = u.searchParams.get("action")?.replace("eq.", "");
       const or = u.searchParams.get("or") ?? "";
       const ip = or.match(/ip_hash\.eq\.([^,)]+)/)?.[1] ?? u.searchParams.get("ip_hash")?.replace("eq.", "");
-      const acct = decodeURIComponent(or.match(/account\.eq\.([^,)]+)/)?.[1] ?? u.searchParams.get("account")?.replace("eq.", "") ?? "");
+      const acct = decodeURIComponent(or.match(/account\.eq\.("[^"]*"|[^,)]+)/)?.[1] ?? u.searchParams.get("account")?.replace("eq.", "") ?? "").replace(/^"|"$/g, "");
       const okOnly = u.searchParams.get("ok") === "eq.true";
       const rows = events.filter((e) => e.action === action && (e.ip_hash === ip || (acct && e.account === acct)) && (!okOnly || e.ok)).reverse();
       return Response.json(rows);
@@ -185,6 +185,29 @@ describe("email code sign-in", () => {
 
   test("cross-site sign-in requests are refused", async () => {
     expect((await otpRoute(post("/api/auth/otp", { email: "a@b.co" }, { origin: "https://evil.example" }))).status).toBe(403);
+  });
+});
+
+describe("input that reaches the database", () => {
+  test("filter values are quoted, so brackets and commas can't change a query", () => {
+    const v = decodeURIComponent(RL.pgValue('x),ip_hash.eq.zzz,"q\\'));
+    expect(v).toBe('"x),ip_hash.eq.zzz,\\"q\\\\"');
+  });
+  test("odd email addresses are refused before any lookup", async () => {
+    for (const email of ["a),ip_hash.eq.x@b.co", 'a"b@c.co', "a@b", "<script>@x.co"]) {
+      expect((await otpRoute(post("/api/auth/otp", { email }))).status).toBe(400);
+    }
+  });
+});
+
+describe("links built from data", async () => {
+  const { safeUrl } = await import("@/lib/safeUrl");
+  test("only http(s) links survive", () => {
+    expect(safeUrl("https://news.ycombinator.com/item?id=1")).toBe("https://news.ycombinator.com/item?id=1");
+    expect(safeUrl("javascript:alert(1)")).toBeUndefined();
+    expect(safeUrl(" JaVaScRiPt:alert(1)")).toBeUndefined();
+    expect(safeUrl("data:text/html,<script>")).toBeUndefined();
+    expect(safeUrl("not a url")).toBeUndefined();
   });
 });
 

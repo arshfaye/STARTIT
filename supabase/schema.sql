@@ -20,6 +20,22 @@ drop policy if exists "own workspace" on public.workspaces;
 create policy "own workspace" on public.workspaces
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- The email on a workspace is where reminders go. It always comes from the signed-in account,
+-- whatever a client sends, so nobody can point STARTIT's emails at someone else.
+create or replace function public.workspaces_owner_email() returns trigger
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if auth.uid() is not null then
+    new.email := (select u.email from auth.users u where u.id = auth.uid());
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.workspaces_owner_email() from public, anon, authenticated;
+drop trigger if exists workspaces_owner_email on public.workspaces;
+create trigger workspaces_owner_email before insert or update on public.workspaces
+  for each row execute function public.workspaces_owner_email();
+
 -- Which reminders went out, so the daily job never sends the same one twice.
 create table if not exists public.notification_log (
   user_id uuid not null references auth.users (id) on delete cascade,

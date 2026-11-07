@@ -13,6 +13,7 @@
  *                  (free; create an app password in Bluesky settings).
  */
 import { guard } from "@/lib/server/guard";
+import { safeUrl } from "@/lib/safeUrl";
 import type { Signal, SignalSource } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -91,7 +92,7 @@ async function stackexchange(q: string): Promise<Signal[]> {
         source: "stackexchange" as const,
         title: strip(it.title),
         text: strip(it.body).slice(0, 2000),
-        url: it.link,
+        url: safeUrl(it.link),
         author: it.owner?.display_name,
         community: site === "softwarerecs" ? "Software Recommendations" : site,
         score: it.score,
@@ -144,7 +145,7 @@ const RUN: Record<Live, (q: string, country: string) => Promise<Signal[]>> = { h
 /** Probe: lets the app check that live search exists here and which sources have their keys. */
 export async function GET() {
   // Searches need signed-in accounts in production (lib/server/guard.ts). Without them, say so, and the app offers Paste posts instead.
-  const ready = !!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NODE_ENV !== "production";
+  const ready = !!process.env.NEXT_PUBLIC_SUPABASE_URL || (process.env.NODE_ENV !== "production" && !process.env.VERCEL);
   return Response.json({
     ok: ready,
     sources: { hn: true, appstore: true, stackexchange: true, bluesky: !!(process.env.BLUESKY_HANDLE && process.env.BLUESKY_APP_PASSWORD) },
@@ -166,7 +167,8 @@ export async function POST(req: Request) {
   const results = await Promise.all(
     sources.map((s) =>
       RUN[s](query, country).catch((e: Error) => {
-        errors[s] = e.message;
+        console.warn(`[research] ${s} failed:`, e.message);
+        errors[s] = "This source didn't respond. Try again later.";
         return [] as Signal[];
       }),
     ),

@@ -29,7 +29,7 @@ export async function verifyTotp(u: SessionUser, factorId: string, code: string)
   if (!ch.ok || !ch.body.id) return false;
   const v = await gotrue<Tokens>(`factors/${factorId}/verify`, { method: "POST", token: u.accessToken, body: JSON.stringify({ challenge_id: ch.body.id, code }) });
   if (!v.ok || !v.body.access_token) return false;
-  setSession(v.body);
+  await setSession(v.body);
   return true;
 }
 

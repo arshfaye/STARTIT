@@ -51,6 +51,7 @@ export async function POST(req: Request) {
     }
     return Response.json({ url: await stripeCheckout(caller.id, caller.email, origin, tier), provider: "stripe" });
   } catch (e) {
-    return Response.json({ error: (e as Error).message }, { status: 502 });
+    console.error("[billing/checkout]", (e as Error).message);
+    return Response.json({ error: "Checkout couldn't start. Try again in a few minutes." }, { status: 502 });
   }
 }

@@ -25,7 +25,8 @@ export async function POST(req: Request) {
       else if (sub.provider === "razorpay") await razorpayCancel(sub.provider_sub, false);
     } catch (e) {
       // Don't delete the account while it can still be charged.
-      return Response.json({ error: `Couldn't cancel your subscription: ${(e as Error).message}. Nothing was deleted. Try again or contact support.` }, { status: 502 });
+      console.error("[account/delete] cancel failed:", (e as Error).message);
+      return Response.json({ error: "Couldn't cancel your subscription, so nothing was deleted. Try again in a few minutes or contact support." }, { status: 502 });
     }
   }
 
@@ -34,6 +35,6 @@ export async function POST(req: Request) {
     headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
   });
   if (!del.ok && del.status !== 404) return Response.json({ error: `Couldn't delete the account (${del.status}).` }, { status: 502 });
-  clearSession();
+  await clearSession();
   return Response.json({ ok: true });
 }

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     await fail(req, "otp_verify", email, g.attempts, `gotrue ${r.status}`);
     return json({ error: WRONG, code: "wrong_code" }, 400);
   }
-  setSession(r.body);
+  await setSession(r.body);
   await logAttempt("otp_verify", clientIp(req), email, true);
   const u = await sessionUserFromToken(r.body.access_token);
   return json({ ok: true, mfaRequired: !!u && needsMfa(u) });

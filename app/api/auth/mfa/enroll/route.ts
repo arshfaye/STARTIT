@@ -16,6 +16,7 @@ export async function POST(req: Request) {
   try {
     return json(await enrollTotp(u));
   } catch (e) {
-    return json({ error: (e as Error).message, code: "upstream_error" }, 502);
+    console.error("[auth/mfa/enroll]", (e as Error).message);
+    return json({ error: "Couldn't start setup. Try again in a minute.", code: "upstream_error" }, 502);
   }
 }

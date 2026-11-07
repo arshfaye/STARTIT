@@ -23,6 +23,7 @@ export async function POST(req: Request) {
     await razorpayCancel(sub.provider_sub);
     return Response.json({ cancelled: true });
   } catch (e) {
-    return Response.json({ error: (e as Error).message }, { status: 502 });
+    console.error("[billing/manage]", (e as Error).message);
+    return Response.json({ error: "The payment provider didn't respond. Try again in a few minutes." }, { status: 502 });
   }
 }
