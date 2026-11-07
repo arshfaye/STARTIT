@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Check, MapPin, Search } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { COUNTRIES, CURRENCIES, countryByCode, detectCountry, flag, longDate, money, prefsFor, samplePrice, type Prefs } from "@/lib/locale";
 import { cloudEnabled, cloudSignOut, deleteCloudAccount, sendMagicLink, verifyEmailCode } from "@/lib/cloud";
 import { disablePush, enablePush, pushSupport, testPush } from "@/lib/push";
@@ -13,6 +13,7 @@ import type { IdeaInput } from "@/lib/types";
 import { LEGAL_VERSION } from "@/lib/legal";
 import { cx } from "./ui";
 import { EncryptionSettings } from "./Vault";
+import { TwoFactorSettings, useAuthCall } from "./Security";
 
 type Step = "account" | "location" | "startup";
 const STEPS: Step[] = ["account", "location", "startup"];
@@ -34,18 +35,25 @@ export function Onboarding() {
   const [verifying, setVerifying] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
+  // Sign-in calls show a CAPTCHA when the server asks for one (after repeated failures).
+  const auth = useAuthCall();
+
+  // Coming back from the sign-in link in the email when it didn't work.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("auth");
+    if (q === "failed") setErr("That sign-in link is invalid or has expired. Enter your email to get a new code.");
+    if (q === "limited") setErr("Too many sign-in attempts. Wait 15 minutes, then try again.");
+    if (q) history.replaceState(null, "", window.location.pathname + window.location.hash);
+  }, []);
+
   const submitCode = async () => {
     if (!/^\d{6}$/.test(code.trim())) return setErr("Enter the 6-digit code from the email.");
     setErr(null);
     setVerifying(true);
-    try {
-      await verifyEmailCode(email.trim(), code.trim());
-      // Signed in: reload so the workspace (or setup, for a new account) loads from the server.
-      window.location.reload();
-    } catch (e) {
-      setErr((e as Error).message);
-      setVerifying(false);
-    }
+    const r = await auth.run((captcha) => verifyEmailCode(email.trim(), code.trim(), captcha));
+    // Signed in: reload so the next step (authenticator, workspace or setup) loads from the server.
+    if (r) window.location.reload();
+    else setVerifying(false);
   };
   const [err, setErr] = useState<string | null>(null);
 
@@ -72,12 +80,8 @@ export function Onboarding() {
       try {
         localStorage.setItem("startit:pendingName", name.trim());
       } catch {}
-      try {
-        await sendMagicLink(email.trim());
-        setLinkSent(true);
-      } catch (e) {
-        setErr((e as Error).message);
-      }
+      const sent = await auth.run((captcha) => sendMagicLink(email.trim(), captcha));
+      if (sent !== null) setLinkSent(true);
       return;
     }
     const existing = loadWorkspace(email);
@@ -138,8 +142,9 @@ export function Onboarding() {
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="000000"
               />
-              {err && <p className="mt-2 text-sm text-flame">{err}</p>}
-              <button type="submit" className="btn-primary mt-3 w-full py-2.5" disabled={verifying || code.length !== 6}>
+              {auth.widget}
+              {(err || auth.err) && <p className="mt-2 text-sm text-flame">{err || auth.err}</p>}
+              <button type="submit" className="btn-primary mt-3 w-full py-2.5" disabled={verifying || auth.needsCaptcha || code.length !== 6}>
                 {verifying ? "Signing in…" : "Sign in"}
               </button>
               <button
@@ -181,8 +186,11 @@ export function Onboarding() {
                     I&apos;m 18 or older and I agree to the <LegalLink href="/terms">Terms of service</LegalLink> and <LegalLink href="/privacy">Privacy policy</LegalLink>.
                   </span>
                 </label>
-                {err && <p className="text-sm text-flame">{err}</p>}
-                <button type="submit" className="btn-primary w-full py-2.5">Continue</button>
+                {auth.widget}
+                {(err || auth.err) && <p className="text-sm text-flame">{err || auth.err}</p>}
+                <button type="submit" className="btn-primary w-full py-2.5" disabled={auth.busy || auth.needsCaptcha}>
+                  {auth.busy ? "Sending…" : "Continue"}
+                </button>
               </div>
               <p className="mt-6 text-center text-xs leading-relaxed text-muted">
                 {cloud
@@ -459,6 +467,13 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         <p className="text-sm font-medium">Privacy and encryption</p>
         <EncryptionSettings />
       </div>
+
+      {cloudEnabled() && (
+        <div className="space-y-3 border-t border-line pt-5">
+          <p className="text-sm font-medium">Two-step verification</p>
+          <TwoFactorSettings />
+        </div>
+      )}
 
       <div className="space-y-2 border-t border-line pt-5">
         {!confirmReset ? (

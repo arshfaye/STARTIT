@@ -4,6 +4,12 @@
  */
 import { beforeEach, describe, expect, test } from "bun:test";
 import { createHmac } from "crypto";
+import { jar } from "./setup";
+
+/** A JWT-shaped token; the fake auth server decides whether it's valid. */
+const tok = (claims: Record<string, unknown>) => `h.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.s`;
+const GOOD = tok({ sub: "u1", exp: 4102444800, aal: "aal1" });
+const FORGED = tok({ sub: "u1", exp: 4102444800, aal: "aal2" });
 
 // Environment must be set before the server modules load (they read it at import time).
 Object.assign(process.env, {
@@ -45,7 +51,7 @@ beforeEach(() => {
     const method = init?.method ?? "GET";
     calls.push(`${method} ${u.replace(/^https:\/\/[^/]+/, "")}`);
     const headers = (init?.headers ?? {}) as Record<string, string>;
-    if (u.endsWith("/auth/v1/user")) return headers.Authorization === "Bearer good" ? Response.json({ id: "u1", email: "a@b.co" }) : new Response("no", { status: 401 });
+    if (u.endsWith("/auth/v1/user")) return headers.Authorization === `Bearer ${GOOD}` ? Response.json({ id: "u1", email: "a@b.co", factors: [] }) : new Response("no", { status: 401 });
     if (u.includes("/rest/v1/subscriptions")) return Response.json(subscriptionRows);
     if (u.endsWith("/rest/v1/rpc/use_quota")) {
       const b = JSON.parse(String(init?.body));
@@ -60,7 +66,12 @@ beforeEach(() => {
   }) as typeof fetch;
 });
 
-const req = (path: string, headers: Record<string, string> = { authorization: "Bearer good" }) => new Request(`https://app.test${path}`, { method: "POST", headers, body: "{}" });
+/** A same-site POST carrying the session cookie (token = null: signed out). */
+const req = (path: string, token: string | null = GOOD, headers: Record<string, string> = {}) => {
+  jar.clear();
+  if (token) jar.set("__Host-startit-at", { value: token, opts: {} });
+  return new Request(`https://app.test${path}`, { method: "POST", headers: { origin: "https://app.test", host: "app.test", ...headers }, body: "{}" });
+};
 
 /* ---------------------------------------------------------------- tests -- */
 
@@ -101,8 +112,16 @@ describe("webhooks map payments to the right plan", () => {
 
 describe("usage limits", () => {
   test("signed-out and forged requests are refused", async () => {
-    expect(((await guard(req("/api/cofounder", {}), "chat")) as Response).status).toBe(401);
-    expect(((await guard(req("/api/cofounder", { authorization: "Bearer forged" }), "chat")) as Response).status).toBe(401);
+    expect(((await guard(req("/api/cofounder", null), "chat")) as Response).status).toBe(401);
+    expect(((await guard(req("/api/cofounder", FORGED), "chat")) as Response).status).toBe(401);
+  });
+
+  test("a bearer token in a header is ignored: only the httpOnly cookie counts", async () => {
+    expect(((await guard(req("/api/cofounder", null, { authorization: `Bearer ${GOOD}` }), "chat")) as Response).status).toBe(401);
+  });
+
+  test("cross-site requests are refused even with a valid session (CSRF)", async () => {
+    expect(((await guard(req("/api/cofounder", GOOD, { origin: "https://evil.example" }), "chat")) as Response).status).toBe(401);
   });
 
   test("Garage gets exactly 10 AI messages a day, then an upgrade suggestion", async () => {
@@ -147,6 +166,6 @@ describe("account deletion", () => {
 });
 
 test("web checkout is refused from the store apps", async () => {
-  const r = await checkout(req("/api/billing/checkout", { authorization: "Bearer good", "user-agent": "Mozilla/5.0 (iPhone) StartitApp" }));
+  const r = await checkout(req("/api/billing/checkout", GOOD, { "user-agent": "Mozilla/5.0 (iPhone) StartitApp" }));
   expect(r.status).toBe(403);
 });

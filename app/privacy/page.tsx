@@ -37,6 +37,10 @@ export default function Privacy() {
           <li><b>Usage counts:</b> how many AI messages, searches and similar actions you used each day, to apply plan limits.</li>
           <li><b>Notifications:</b> if you turn on push notifications, a device token that lets us send them.</li>
           <li><b>Reminder facts:</b> the due dates of your open tasks, when you last checked in or used the app, your kill-criteria deadline and the last-update dates of open leads. Dates and counts only, no titles, names or amounts, so we can remind you without reading your workspace.</li>
+          <li>
+            <b>Sign-in security log:</b> each sign-in attempt (time, step, whether it worked, your email and a scrambled form of your IP address) for 30 days, to stop people guessing
+            codes. If you turn on two-step verification, Supabase stores your authenticator secret and we store scrambled backup codes.
+          </li>
           <li><b>Your agreement:</b> that you confirmed you&apos;re 18 or older and which version of these terms you accepted, and when.</li>
         </ul>
         <p>You&apos;re responsible for having the right to add other people&apos;s details. Don&apos;t add sensitive information about them that the product doesn&apos;t need.</p>
@@ -67,7 +71,7 @@ export default function Privacy() {
             HTTPS, through our server to our AI provider. We don&apos;t store or log it. The AI provider processes it under its own terms to produce the answer.
           </li>
           <li>To bill you and apply your plan&apos;s limits.</li>
-          <li>To keep the service secure and fix problems.</li>
+          <li>To keep the service secure and fix problems, including blocking repeated failed sign-ins.</li>
         </ul>
         <p>We don&apos;t sell your data, and we don&apos;t use it for advertising.</p>
       </section>
@@ -77,6 +81,7 @@ export default function Privacy() {
         <p>Only service providers that run parts of STARTIT for us, and only what each needs:</p>
         <ul>
           <li><b>Supabase:</b> hosts your account and your encrypted workspace.</li>
+          <li><b>Cloudflare:</b> shows a human check (Turnstile) after repeated failed sign-ins, and receives your IP address for it.</li>
           <li><b>Vercel:</b> hosts the app.</li>
           <li><b>Anthropic:</b> generates AI answers from the data you send through AI features.</li>
           <li><b>Razorpay</b> (India) and <b>Stripe</b> (elsewhere): process payments.</li>

@@ -1,20 +1,18 @@
 /**
  * POST   /api/push/subscribe  { subscription }  — save this device for push notifications
  * DELETE /api/push/subscribe  { endpoint }      — remove it
- * Auth: "Authorization: Bearer <Supabase access token>" (sent by lib/push.ts).
+ * Auth: the httpOnly session cookie (lib/server/session.ts); requests must come from this site.
  */
+import { getCaller } from "@/lib/server/guard";
+
 export const runtime = "nodejs";
 
 const SB = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+/** The signed-in founder's id from the httpOnly session (same-site requests only). */
 async function userId(req: Request): Promise<string | null> {
-  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token || !SB || !ANON) return null;
-  const r = await fetch(`${SB}/auth/v1/user`, { headers: { apikey: ANON, Authorization: `Bearer ${token}` } });
-  if (!r.ok) return null;
-  return ((await r.json()) as { id?: string }).id ?? null;
+  return (await getCaller(req))?.id ?? null;
 }
 
 const db = (path: string, init: RequestInit) =>

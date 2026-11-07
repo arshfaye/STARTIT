@@ -72,6 +72,7 @@ flowchart LR
 ## Engineering highlights
 
 - **Limits that can't be bypassed.** Every paid route checks the user server-side and spends from a per-user daily quota in a single atomic Postgres statement (`use_quota`), so parallel requests can't overshoot. Plans are only ever changed by signature-verified webhooks.
+- **Sign-in security.** No passwords and no tokens in the browser: the server keeps sessions in httpOnly, SameSite=Strict cookies. Authenticator-app two-step verification with hashed one-time backup codes (required for admins, enforced in the database too), per-IP rate limits, exponential account lockout, a CAPTCHA after repeated failures, and a strict Content-Security-Policy. See [docs/SECURITY.md](docs/SECURITY.md).
 - **Webhook security.** HMAC-SHA256 with constant-time comparison for both providers, plus Stripe's timestamp check against replayed requests. The plan tier is read from the price or plan ID, so changes made in Stripe's billing portal sync correctly, and a Razorpay upgrade cancels the old subscription so nobody is billed twice.
 - **Grounded AI.** The co-founder receives a structured dossier of the founder's real data (tasks, revenue, pipeline, interviews, research) instead of a vague prompt. In research, any quote that doesn't match a collected post is thrown out.
 - **Scoring that resists gaming.** Deleting an overdue task counts as a missed deadline, so it can never raise the score. Deadlines lock once set.
@@ -104,6 +105,7 @@ bun test
 
 - [Technical guide](docs/GUIDE.md): how each part works and how to configure it.
 - [Launch guide](docs/LAUNCH.md): from a web app to the App Store and Play Store, with costs.
+- [Security](docs/SECURITY.md): sessions, two-step verification, rate limits and the settings to switch on.
 
 ## Status
 

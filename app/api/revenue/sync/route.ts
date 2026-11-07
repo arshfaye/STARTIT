@@ -10,7 +10,7 @@
  * Admin-only: the keys in .env.local are the operator's own accounts, so only ADMIN_EMAILS can sync.
  * To let every founder sync their own payments, add Stripe Connect / Razorpay OAuth per user.
  */
-import { getCaller, isAdmin } from "@/lib/server/guard";
+import { getCaller, isAdmin, requireAdmin } from "@/lib/server/guard";
 import type { RevenueEntry } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -92,9 +92,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   // The server's Stripe/Razorpay keys are the operator's own accounts. Never let other users read them.
-  const caller = await getCaller(req);
-  if (!caller) return Response.json({ error: "Sign in to sync." }, { status: 401 });
-  if (!isAdmin(caller)) return Response.json({ error: "Sync is limited to this workspace's owner. Import a CSV instead." }, { status: 403 });
+  // Admin middleware: on the admin list, and two-step verification completed in this session.
+  const admin = await requireAdmin(req);
+  if (admin instanceof Response) return admin;
   const provider = new URL(req.url).searchParams.get("provider");
   try {
     const entries = provider === "stripe" ? await stripe() : provider === "razorpay" ? await razorpay() : null;

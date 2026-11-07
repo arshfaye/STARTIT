@@ -8,6 +8,7 @@
  */
 import { razorpayCancel, stripeCancelNow } from "@/lib/server/billing";
 import { cloudReady, db, getCaller } from "@/lib/server/guard";
+import { clearSession } from "@/lib/server/session";
 
 export const runtime = "nodejs";
 
@@ -33,5 +34,6 @@ export async function POST(req: Request) {
     headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
   });
   if (!del.ok && del.status !== 404) return Response.json({ error: `Couldn't delete the account (${del.status}).` }, { status: 502 });
+  clearSession();
   return Response.json({ ok: true });
 }

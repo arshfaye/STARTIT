@@ -106,5 +106,7 @@ export async function GET(req: Request) {
       if (facts.email && (await claim(row.user_id, n.kind, day, "email"))) count(await email(row.email, n));
     }
   }
+  // Sign-in attempt logs are kept 30 days.
+  await db(`auth_events?at=lt.${new Date(Date.now() - 30 * 864e5).toISOString()}`, { method: "DELETE" }).catch(() => {});
   return Response.json({ workspaces: rows.length, results });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode } from "react";
-import { cloudEnabled, cloudUserEmail, openCloudWorkspace, resetCloudWorkspace, saveCloudWorkspace, unlockCloudWorkspace } from "./cloud";
+import { cloudEnabled, getSession, openCloudWorkspace, purgeLegacyTokens, resetCloudWorkspace, saveCloudWorkspace, unlockCloudWorkspace } from "./cloud";
 import { addDays, analyzeIdea, daysBetween, buildTasks, computeExecution, gradeFromScore, scoreCheckIn, today, type ExecutionBreakdown } from "./engine";
 import { countryByCode, detectCountry, money, prefsFor, samplePrice, setActivePrefs, type Prefs } from "./locale";
 import { revenueBetween } from "./revenue";
@@ -371,6 +371,10 @@ interface Ctx {
   exec: ExecutionBreakdown;
   /** Email of the signed-in Supabase user (cloud mode only). */
   cloudEmail: string | null;
+  /** Signed in with the email code, but the account's authenticator app is still needed. */
+  mfaNeeded: boolean;
+  /** After passing two-step verification: load the workspace. */
+  finishSignIn: () => Promise<void>;
   /** End-to-end encryption (cloud mode only). */
   vault: {
     /** The workspace is encrypted and this device needs the recovery key. */
@@ -394,6 +398,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const [cloudEmail, setCloudEmail] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+  const [mfaNeeded, setMfaNeeded] = useState(false);
   const [recovery, setRecovery] = useState<string | null>(null);
 
   // Restore the founder's workspace: from Supabase when configured, otherwise this browser.
@@ -401,7 +406,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (async () => {
       if (cloudEnabled()) {
         try {
-          const email = await cloudUserEmail();
+          purgeLegacyTokens();
+          const session = await getSession();
+          if (session.signedIn && session.mfa?.needed) {
+            setMfaNeeded(true);
+            return;
+          }
+          const email = session.signedIn ? (session.email ?? null) : null;
           setCloudEmail(email);
           if (!email) {
             dispatch({ type: "HYDRATE", state: null });
@@ -468,7 +479,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [locked, recovery],
   );
 
-  return <StoreContext.Provider value={{ state, dispatch, exec, cloudEmail, vault }}>{children}</StoreContext.Provider>;
+  // Reloading re-reads the session (now aal2) and opens the workspace the normal way.
+  const finishSignIn = async () => window.location.reload();
+
+  return <StoreContext.Provider value={{ state, dispatch, exec, cloudEmail, vault, mfaNeeded, finishSignIn }}>{children}</StoreContext.Provider>;
 }
 
 export function useStore() {

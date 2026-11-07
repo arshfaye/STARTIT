@@ -7,6 +7,7 @@ import { StoreProvider, useStore } from "@/lib/store";
 import type { TabId } from "@/lib/types";
 import { Logo, Onboarding, SettingsPanel } from "./Onboarding";
 import { RecoveryKeyDialog, UnlockScreen } from "./Vault";
+import { MfaChallenge } from "./Security";
 import { GradeBadge, Modal, cx } from "./ui";
 import { Accountability } from "./views/Accountability";
 import { Cofounder } from "./views/Cofounder";
@@ -39,11 +40,12 @@ const MOBILE_TABS: TabId[] = ["cofounder", "timetable", "customers", "revenue"];
 const TAB_IDS = TABS.map((t) => t.id);
 
 function Gate() {
-  const { state, vault } = useStore();
+  const { state, vault, mfaNeeded } = useStore();
   // Store app: lets CSS keep the header clear of the notch and status bar.
   useEffect(() => {
     if (isNativeApp()) document.documentElement.classList.add("native");
   }, []);
+  if (mfaNeeded) return <MfaChallenge />;
   if (vault.locked) return <UnlockScreen />;
   if (!state.ready) return <div className="grid min-h-screen place-items-center text-sm text-muted">Loading…</div>;
   if (!state.profile)

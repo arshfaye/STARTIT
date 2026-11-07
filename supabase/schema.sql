@@ -105,3 +105,48 @@ $$;
 
 -- Only the server (service role) may spend quota; signed-in users can't call it directly.
 revoke all on function public.use_quota(uuid, text, int) from public, anon, authenticated;
+
+-- ------------------------------------------------------------- security --
+
+-- Every sign-in step (code sent, code checked, authenticator, backup code), for rate limiting,
+-- account lockout and the security log. IPs are stored only as a keyed hash. Kept 30 days.
+create table if not exists public.auth_events (
+  id       bigserial primary key,
+  at       timestamptz not null default now(),
+  action   text not null,          -- 'otp_send' | 'otp_verify' | 'mfa_verify' | 'backup_code'
+  ok       boolean not null,
+  account  text,                   -- lower-cased email, when known
+  ip_hash  text not null,
+  detail   text
+);
+create index if not exists auth_events_ip on public.auth_events (action, ip_hash, at desc);
+create index if not exists auth_events_account on public.auth_events (action, account, at desc);
+alter table public.auth_events enable row level security;
+-- No policies: only the server (service role) reads or writes this table.
+
+-- Two-step verification backup codes: salted HMACs only, each usable once.
+create table if not exists public.mfa_backup_codes (
+  id        bigserial primary key,
+  user_id   uuid not null references auth.users (id) on delete cascade,
+  salt      text not null,
+  code_hash text not null,
+  used_at   timestamptz
+);
+create index if not exists mfa_backup_codes_user on public.mfa_backup_codes (user_id);
+alter table public.mfa_backup_codes enable row level security;
+-- No policies: only the server (service role) reads or writes this table.
+
+-- If an account has an authenticator app, its data can only be reached from a session that
+-- completed two-step verification (aal2), even with a valid sign-in token.
+create or replace function public.mfa_satisfied() returns boolean
+language sql stable security definer set search_path = public, auth as $$
+  select coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'
+      or not exists (select 1 from auth.mfa_factors f where f.user_id = auth.uid() and f.status = 'verified');
+$$;
+
+drop policy if exists "require 2fa" on public.workspaces;
+create policy "require 2fa" on public.workspaces as restrictive for all to authenticated using (public.mfa_satisfied()) with check (public.mfa_satisfied());
+drop policy if exists "require 2fa" on public.subscriptions;
+create policy "require 2fa" on public.subscriptions as restrictive for select to authenticated using (public.mfa_satisfied());
+drop policy if exists "require 2fa" on public.usage;
+create policy "require 2fa" on public.usage as restrictive for select to authenticated using (public.mfa_satisfied());

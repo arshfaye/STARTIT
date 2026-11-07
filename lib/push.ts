@@ -3,7 +3,7 @@
  * VAPID keys. Works on Android, desktop Chrome/Edge/Firefox/Safari, and on iPhone once the app
  * is added to the home screen (iOS 16.4+).
  */
-import { cloudAccessToken, cloudEnabled } from "./cloud";
+import { cloudEnabled } from "./cloud";
 import { isNativeApp } from "./platform";
 
 const VAPID = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY : undefined;
@@ -29,9 +29,8 @@ function keyBytes(b64: string) {
 }
 
 async function authed(method: "POST" | "DELETE", body: unknown) {
-  const token = await cloudAccessToken();
-  if (!token) throw new Error("Sign in first.");
-  const r = await fetch("/api/push/subscribe", { method, headers: { "content-type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+  // The session is an httpOnly cookie; same-origin requests send it automatically.
+  const r = await fetch("/api/push/subscribe", { method, credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error || `Failed (${r.status})`);
 }
 
