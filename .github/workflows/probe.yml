@@ -1,0 +1,20 @@
+name: Probe
+on:
+  push:
+    branches: [probe]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          U=https://startit-arshfaye.vercel.app
+          for p in / /app /privacy /terms /api/auth/session /api/research /.env /.env.local /.git/config /package.json /next.config.mjs /supabase/schema.sql /docs/SECURITY.md; do printf "%-28s %s\n" $p $(curl -s -o /dev/null -w "%{http_code}" "$U$p"); done
+          echo "--- headers /"; curl -sI "$U/" | grep -iE "^(content-security|strict-transport|x-frame|x-content|referrer|permissions|cross-origin|x-powered|cache-control)" | cut -c1-160
+          echo "--- headers /api/auth/session"; curl -sI "$U/api/auth/session" | grep -iE "^(cache-control|access-control|set-cookie)"
+          echo "--- cross-origin POST otp"; curl -s -X POST -H "Origin: https://evil.example" -H "Content-Type: application/json" -d '{"email":"a@b.co"}' $U/api/auth/otp; echo
+          echo "--- password field"; curl -s -X POST -H "Origin: $U" -H "Content-Type: application/json" -d '{"email":"a@b.co","password":"x"}' $U/api/auth/otp; echo
+          echo "--- admin route unauthenticated"; curl -s -w " %{http_code}" -X POST -H "Origin: $U" $U/api/revenue/sync; echo
+          echo "--- workspace unauthenticated"; curl -s -w " %{http_code}" $U/api/workspace; echo
+          echo "--- cron without secret"; curl -s -w " %{http_code}" $U/api/cron/nudges; echo
+          echo "--- CORS preflight"; curl -sI -X OPTIONS -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST" $U/api/workspace | grep -iE "^(HTTP|access-control)"
+          echo "--- source maps / secrets in client JS"; for js in $(curl -s "$U/app" | grep -oE '/_next/static/[^"]+\.js' | sort -u); do curl -s "$U$js" > f.js; grep -l "sourceMappingURL" f.js >/dev/null && echo "map ref in $js"; grep -oE "(service_role|sk_live_[A-Za-z0-9]+|sk_test_[A-Za-z0-9]+|SUPABASE_SERVICE|eyJhbGciOi[A-Za-z0-9_-]{20,}|rzp_live|VAPID_PRIVATE|TURNSTILE_SECRET|AUTH_HASH)" f.js | sort -u | sed "s|^|FOUND in $js: |"; done; echo "scan done"
