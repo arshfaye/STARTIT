@@ -27,6 +27,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-fund --no-audit
+      - run: npx next build
       # Fails on any known high or critical vulnerability in the packages the app ships.
       - run: npm audit --omit=dev --audit-level=high
-      - run: npx next build
+        if: always()
